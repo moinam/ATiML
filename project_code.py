@@ -28,11 +28,12 @@ parser.add_argument("--query", required=True)
 
 
 class Dataset:
-    def __init__(self, img, filename, filepath, descripList):
+    def __init__(self, img, filename, filepath, descripList, grayscale):
         self.img = img
         self.filename = filename
         self.filepath = filepath
         self.descripList = descripList
+        self.grayscale = grayscale
 
     def __repr__(self):
         return "Image:% s Description List:% s" % (self.filename, self.descripList)
@@ -48,6 +49,33 @@ class ImageDescrip:
     def __repr__(self):
         return "Image Description:% s ImageList:% s " % (self.descrip, self.imgList)
 
+# Create Grayscale
+
+
+def convert_greyscale(img):
+    '''Convert image to Grayscale\n
+       Parameters
+           img: image object
+    '''
+    # we have to convert it to grayscale
+    if (len(img.shape) > 2):
+        img = img.astype(float)
+        # RGB to grayscale convertion using Luminance
+        # We are extracting R,G & B channels from patch and
+        # using grayscale conversion algorithm that is used in OpenCV’s cvtColor().
+        img = img[:, :, 0] * 0.3 + img[:, :, 1] * 0.59 + img[:, :, 2] * 0.11
+    
+    # converting to uint8 type for 256 graylevels
+    img = img.astype(np.uint8)
+
+    # normalize values can also help improving description
+    i_min = np.min(img)
+    i_max = np.max(img)
+    if (i_max - i_min != 0):
+        img = (img - i_min) / (i_max - i_min)
+
+    return img
+
 # Create DataSet Object
 
 
@@ -56,7 +84,8 @@ def create_dataset_object(img_file):
        Parameters
            file: path for an image
     '''
-    return Dataset(cv2.imread(img_file), img_file[-10:-4], img_file, [])
+    img = cv2.imread(img_file)
+    return Dataset(img, img_file[-10:-4], img_file, [], convert_greyscale(img))
 
 # Create Image Data Set
 
@@ -127,21 +156,23 @@ def lbp_features(img, radius=1, sampling_pixels=8):
     '''
     # LBP operates in single channel images so if RGB images are provided
     # we have to convert it to grayscale
-    if (len(img.shape) > 2):
-        img = img.astype(float)
-        # RGB to grayscale convertion using Luminance
-        # We are extracting R,G & B channels from patch and
-        # using grayscale conversion algorithm that is used in OpenCV’s cvtColor().
-        img = img[:, :, 0] * 0.3 + img[:, :, 1] * 0.59 + img[:, :, 2] * 0.11
+    # if (len(img.shape) > 2):
+    #     img = img.astype(float)
+    #     # RGB to grayscale convertion using Luminance
+    #     # We are extracting R,G & B channels from patch and
+    #     # using grayscale conversion algorithm that is used in OpenCV’s cvtColor().
+    #     img = img[:, :, 0] * 0.3 + img[:, :, 1] * 0.59 + img[:, :, 2] * 0.11
 
-    # converting to uint8 type for 256 graylevels
-    img = img.astype(np.uint8)
+    # # converting to uint8 type for 256 graylevels
+    # img = img.astype(np.uint8)
 
-    # normalize values can also help improving description
-    i_min = np.min(img)
-    i_max = np.max(img)
-    if (i_max - i_min != 0):
-        img = (img - i_min) / (i_max - i_min)
+    # # normalize values can also help improving description
+    # i_min = np.min(img)
+    # i_max = np.max(img)
+    # if (i_max - i_min != 0):
+    #     img = (img - i_min) / (i_max - i_min)
+
+    img = convert_greyscale(img)
 
     # compute LBP
     lbp = feature.local_binary_pattern(
