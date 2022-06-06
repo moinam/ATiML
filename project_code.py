@@ -1,6 +1,8 @@
 import glob
 from math import dist
+import random
 import cv2
+import csv
 import os
 import argparse
 import numpy as np
@@ -12,7 +14,6 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from joblib import Parallel, delayed
 from skimage import feature
-from sklearn.neighbors import KNeighborsClassifier, NearestNeighbors
 from sklearn.pipeline import Pipeline
 
 # --------Acepting Input----------
@@ -27,12 +28,25 @@ parser.add_argument("--query", required=True)
 
 
 class Dataset:
-    def __init__(self, img, filename):
+    def __init__(self, img, filename, filepath, descripList):
         self.img = img
         self.filename = filename
+        self.filepath = filepath
+        self.descripList = descripList
 
     def __repr__(self):
-        return "Debug image:% s Filename:% s" % (self.img, self.filename)
+        return "Image:% s Description List:% s" % (self.filename, self.descripList)
+
+# Image Description class for easy access
+
+
+class ImageDescrip:
+    def __init__(self, descrip, imgList):
+        self.descrip = descrip
+        self.imgList = imgList
+
+    def __repr__(self):
+        return "Image Description:% s ImageList:% s " % (self.descrip, self.imgList)
 
 # Create DataSet Object
 
@@ -42,7 +56,7 @@ def create_dataset_object(img_file):
        Parameters
            file: path for an image
     '''
-    return Dataset(cv2.imread(img_file), img_file)
+    return Dataset(cv2.imread(img_file), img_file[-10:-4], img_file, [])
 
 # Create Image Data Set
 
@@ -61,6 +75,28 @@ def create_dataset():
     # total of images
     global n_imgs
     n_imgs = len(image_dataset)
+
+# Extract ImageList
+
+
+def extract_imageDescrip():
+    '''Extracting Image List for different Image Descriptions.
+       Import csv files from file location and create ImageDescrip class, 
+       array: image_classSet
+    '''
+    global image_classSet
+    for descrip in img_class_set_names:
+        entry = []
+        path_text = os.getcwd() + img_class_path + \
+            descrip + '_trainval.csv'
+        with open(path_text, 'r') as file:
+            my_reader = csv.reader(file, delimiter=',')
+            for row in my_reader:
+                if(row[1] == '-1'):
+                    continue
+                entry.append(row[0])
+
+        image_classSet.append(ImageDescrip(descrip, entry))
 
 
 # ------------------------- BOVW Functions ----------------------------
@@ -126,16 +162,22 @@ def lbp_features(img, radius=1, sampling_pixels=8):
 
 
 def bovw_fit_kmeans(n_dic, patch_lbp):
+    '''Fitting K-means for BOVW\n
+       Parameters
+           n_dic: k value for k-Means
+           patch_lbp: Linear Binary Pattern patches
+    '''
     global bovw_kmeans_model
     # Define a KMeans clustering model
     bovw_kmeans_model = KMeans(n_clusters=n_dic,
-                          verbose=False,
-                          init='random',
-                          random_state=random_state,
-                          n_init=3)
+                               verbose=False,
+                               init='random',
+                               random_state=random_state,
+                               n_init=3)
     # fit the model
     bovw_kmeans_model.fit(patch_lbp)
     return bovw_kmeans_model
+
 
 def execute_Bovw(dataset, tam_patch, n_patches, random_state):
     '''Creates Bag of Visual Words\n
@@ -214,10 +256,42 @@ def execute_Bovw(dataset, tam_patch, n_patches, random_state):
     print('Number of images and features = ', img_feats.shape)
     return img_feats
 
+# ------------------------- SURF Functions ----------------------------
+
+
+def execute_surf(dataset, threshold):
+    '''Creates Speeded-Up Robust Features\n
+       Parameters
+           dataset: image dataset array
+           threshold: Hessian Threshold
+    '''
+
+    #surf = cv2.features2d.SURF_create(threshold)
+
+
+    # Extract patches in parallel
+    # returns a list of the same size of the number of images
+    t0 = time()
+    # patch_arr = Parallel(n_jobs=-1)(delayed(get_patches)(img.img,
+    #                                                      random_state,
+    #                                                      tam_patch,
+    #                                                      n_patches)
+    #                                 for img in dataset)
+
+    # Progress Report - SURF [1]
+    # print('------------------ Feature Extraction - Bag of Visual Words ------------------')
+
+    return 0
+
 # ------------------------- Candidate Selection ----------------------------
 
 
 def euclidean_dist(img_feats, query_feats):
+    '''Calculates the Euclidean distance for the given features\n
+       Parameters
+           img_feats: candidate image features
+           query_feats: query image feature
+    '''
     dists = []
     for i in range(n_imgs):
         diq = np.sqrt(np.sum((img_feats[i]-query_feats)**2))
@@ -226,6 +300,11 @@ def euclidean_dist(img_feats, query_feats):
 
 
 def extract_feature_query(f_name, query_img):
+    '''Extracts features from given query image\n
+       Parameters
+           f_name: Feature Name
+           query_img: query image
+    '''
     if(f_name == "BOVW"):
         query_patches = get_patches(
             query_img, random_state, tam_patch, n_patches)
@@ -241,10 +320,16 @@ def extract_feature_query(f_name, query_img):
         y = bovw_kmeans_model.predict(query_lbp)
         # computes descriptor
         query_feats, _ = np.histogram(y, bins=range(n_dic+1), density=True)
-    return query_feats    
+    return query_feats
 
 
-def select_candidates(k, feature_set, query_feature, query_img):
+def select_candidates(k, feature_set, query_feature):
+    '''Generates Candidates for clustering using kNN\n
+       Parameters
+           k: k value for kNN
+           feature_set:  array of features of all the images
+           query_feature: query image feature
+    '''
     imgs = []
     dists = euclidean_dist(feature_set, query_feature)
     k_cbir = np.argsort(dists)[:k]
@@ -252,10 +337,52 @@ def select_candidates(k, feature_set, query_feature, query_img):
         imgs.append(image_dataset[k_cbir[i]])
     return imgs
 
+# ------------------------- Constraints Creation ----------------------------
+
+
+def generate_img_descrip(imgList):
+    descripList = []
+    for cla in image_classSet:
+        ImageList = []
+        for cla_img in cla.imgList:
+            for img in imgList:
+                if(img.filename != cla_img):
+                    continue
+                img.descripList.append(cla.descrip)
+                ImageList.append(img.filename)
+        if(len(ImageList) != 0):
+            descripList.append(cla.descrip)
+
+    return descripList
+
+
+def process_img_descrip(imgList, descripList):
+    descripSet = []
+    for img in imgList:
+        if(len(img.descripList) > 1):
+            descrip = random.choice(img.descripList)
+            img.descripList = []
+            img.descripList.append(descrip)
+
+    for descrip in descripList:
+        ImageList = []
+        for img in imgList:
+            if(img.descripList[0] != descrip):
+                continue
+            ImageList.append(img.filename)
+        if(len(ImageList) != 0):
+            descripSet.append(ImageDescrip(descrip, ImageList))
+
+    return descripSet
+
 
 # -------------- Main Function -------------------
 image_dataset = []
 img_folder_path = '\\VOCtrainval_06-Nov-2007\\VOCdevkit\\VOC2007\\JPEGImages\\'
+img_class_path = '\\VOCtrainval_06-Nov-2007\\VOCdevkit\\VOC2007\\ImageSets\\Main\\processed_files\\'
+img_class_set_names = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow',
+                       'diningtable', 'dog', 'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']
+image_classSet = []
 n_imgs = 0
 # BOF parameters
 bovw_kmeans_model = None
@@ -264,7 +391,9 @@ n_patches = 250
 random_state = 1
 n_dic = 50  # size of the dictionary
 
+
 def main():
+
     t0 = time()
     # Read arguments from command line
     args = parser.parse_args()
@@ -273,18 +402,30 @@ def main():
     path_query = os.getcwd() + img_folder_path + query + '.jpg'
     query_img = cv2.imread(path_query)
     # ----------- Creating Data Set ------------------
+    extract_imageDescrip()
     create_dataset()
-    print("Data Set Creation time: %0.3fs" %(time() - t0))
+    print("Data Set Creation time: %0.3fs" % (time() - t0))
+    # ------------------- SURF ----------------------
+    #surf_features = execute_surf(image_dataset, 400)
     # ----------- Bag of Visual Words ---------------
     t0 = time()
     bovw_features = execute_Bovw(
         image_dataset, tam_patch, n_patches, random_state)
-    print("BOVW features Creation time: %0.3fs" %(time() - t0))
+    print("BOVW features Creation time: %0.3fs" % (time() - t0))
     # ----------- Candidate Selection ---------------
+    t0 = time()
     query_feature = extract_feature_query("BOVW", query_img)
     candidate_images_bovw = select_candidates(
-        k, bovw_features, query_feature, query_img)
-    print(candidate_images_bovw)
+        k, bovw_features, query_feature)
+    print("Candidate Selection time: %0.3fs" % (time() - t0))
+    # ----------- Constraint Creation ---------------
+    t0 = time()
+    cand_img_bovw_descripList = generate_img_descrip(candidate_images_bovw)
+    cand_img_bovw_descripSet = process_img_descrip(
+        candidate_images_bovw, cand_img_bovw_descripList)
+    print("Constraint Creation time: %0.3fs" % (time() - t0))
+    print(cand_img_bovw_descripSet)
+
 
 if __name__ == "__main__":
     main()
