@@ -7,7 +7,7 @@
         {
             "name": "Python: Current File",
             "type": "python",
-            "args": ["--k", "50", "--query", "000016"],
+            "args": ["--k", "50", "--query", "000036"],
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
