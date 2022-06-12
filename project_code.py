@@ -36,7 +36,7 @@ class Dataset:
         self.grayscale = grayscale
 
     def __repr__(self):
-        return "Image:% s Description List:% s" % (self.filename, self.descripList)
+        return "Image: % s, Description List: % s" % (self.filename, self.descripList)
 
 # Image Description class for easy access
 
@@ -47,7 +47,7 @@ class ImageDescrip:
         self.imgList = imgList
 
     def __repr__(self):
-        return "Image Description:% s ImageList:% s " % (self.descrip, self.imgList)
+        return "Image Description: % s, ImageList: % s " % (self.descrip, self.imgList)
 
 # Create Grayscale
 
@@ -64,7 +64,7 @@ def convert_greyscale(img):
         # We are extracting R,G & B channels from patch and
         # using grayscale conversion algorithm that is used in OpenCV’s cvtColor().
         img = img[:, :, 0] * 0.3 + img[:, :, 1] * 0.59 + img[:, :, 2] * 0.11
-    
+
     # converting to uint8 type for 256 graylevels
     img = img.astype(np.uint8)
 
@@ -114,18 +114,30 @@ def extract_imageDescrip():
        array: image_classSet
     '''
     global image_classSet
+    temp_img_classSet = []
+    classSet = []
     for descrip in img_class_set_names:
         entry = []
         path_text = os.getcwd() + img_class_path + \
-            descrip + '_trainval.csv'
+            descrip["name"] + '_trainval.csv'
         with open(path_text, 'r') as file:
             my_reader = csv.reader(file, delimiter=',')
             for row in my_reader:
                 if(row[1] == '-1'):
                     continue
                 entry.append(row[0])
+        
+        if descrip["type"] not in classSet:
+            classSet.append(descrip["type"])
+        temp_img_classSet.append(ImageDescrip(descrip["type"], entry))
+    
+    for classType in classSet:
+        entry = set()
+        for imgdescrip in temp_img_classSet:
+            if classType == imgdescrip.descrip:
+                entry.update(imgdescrip.imgList)
+        image_classSet.append(ImageDescrip(classType, set((entry))))
 
-        image_classSet.append(ImageDescrip(descrip, entry))
 
 
 # ------------------------- BOVW Functions ----------------------------
@@ -299,7 +311,6 @@ def execute_surf(dataset, threshold):
 
     #surf = cv2.features2d.SURF_create(threshold)
 
-
     # Extract patches in parallel
     # returns a list of the same size of the number of images
     t0 = time()
@@ -411,8 +422,26 @@ def process_img_descrip(imgList, descripList):
 image_dataset = []
 img_folder_path = '\\VOCtrainval_06-Nov-2007\\VOCdevkit\\VOC2007\\JPEGImages\\'
 img_class_path = '\\VOCtrainval_06-Nov-2007\\VOCdevkit\\VOC2007\\ImageSets\\Main\\processed_files\\'
-img_class_set_names = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat', 'chair', 'cow',
-                       'diningtable', 'dog', 'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']
+img_class_set_names = [{'name': 'aeroplane', 'type': 'vehicle'},
+                       {'name': 'bicycle', 'type': 'vehicle'},
+                       {'name': 'bird', 'type': 'animal'},
+                       {'name': 'boat', 'type': 'vehicle'},
+                       {'name': 'bottle', 'type': 'furniture'},
+                       {'name': 'bus', 'type': 'vehicle'},
+                       {'name': 'car', 'type': 'vehicle'},
+                       {'name': 'cat', 'type': 'animal'},
+                       {'name': 'chair', 'type': 'furniture'},
+                       {'name': 'cow', 'type': 'animal'},
+                       {'name': 'diningtable', 'type': 'furniture'},
+                       {'name': 'dog', 'type': 'animal'},
+                       {'name': 'horse', 'type': 'animal'},
+                       {'name': 'motorbike', 'type': 'vehicle'},
+                       {'name': 'person', 'type': 'person'},
+                       {'name': 'pottedplant', 'type': 'furniture'},
+                       {'name': 'sheep', 'type': 'animal'},
+                       {'name': 'sofa', 'type': 'furniture'},
+                       {'name': 'train', 'type': 'vehicle'},
+                       {'name': 'tvmonitor', 'type': 'electronics'}]
 image_classSet = []
 n_imgs = 0
 # BOF parameters
