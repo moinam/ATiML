@@ -1,11 +1,6 @@
-import glob
-from math import dist
-import random
 import cv2
-import csv
 import os
 import argparse
-import numpy as np
 import matplotlib.pyplot as plt
 import os
 from time import time
@@ -16,6 +11,8 @@ import bag_of_visual_words as bovw
 import mpeg7_color_layout as mpeg7
 import candidate_selection as cand_selec
 import constraint_creation as gen_cons
+import PC_Kmeans as PCK
+import COP_Kmeans as COPK
 # --------Acepting Input----------
 # Initialize parser
 parser = argparse.ArgumentParser()
@@ -67,11 +64,13 @@ def main():
     query = args.query
     path_query = os.getcwd() + img_folder_path + query + '.jpg'
     query_img = cv2.imread(path_query)
+
     # ----------- Creating Data Set ------------------
     image_classSet = dataset.extract_imageDescrip(
         img_class_set_names, img_class_path)
     image_dataset, n_imgs = dataset.create_dataset(img_folder_path)
     print("Data Set Creation time: %0.3fs" % (time() - t0))
+
     # ----------- Bag of Visual Words ---------------
     t0 = time()
     bovw_param = bovw.BOVW(random_state=random_state,
@@ -79,27 +78,34 @@ def main():
     bovw_features = bovw.execute_Bovw(
         image_dataset, bovw_param, n_imgs)
     print("BOVW features Creation time: %0.3fs" % (time() - t0))
+
     # ----------- MPEG7 Feature extraction ----------
     t0 = time()
     mpeg7_features = mpeg7.execute_mpeg7(image_dataset)
     print("MPEG7 features Creation time: %0.3fs" % (time() - t0))
-      # ----------- Candidate Selection ---------------
-    t0 = time()
-    query_feature = mpeg7.get_mpeg7_features(query_img)
-    candidate_images_mpeg7 = cand_selec.select_candidates(
-        "MPEG7", k, mpeg7_features, query_feature, image_dataset, n_imgs)
-    print(" MPEG7 Candidate Selection time: %0.3fs" % (time() - t0))
+
+    # ----------- Candidate Selection ---------------
     t0 = time()
     query_feature = bovw.get_bovw_features(query_img, bovw_param)
     candidate_images_bovw = cand_selec.select_candidates(
         "BOVW", k, bovw_features, query_feature, image_dataset, n_imgs)
-    print(" BOVW Candidate Selection time: %0.3fs" % (time() - t0))
+    print("BOVW Candidate Selection time: %0.3fs" % (time() - t0))
+    t0 = time()
+    query_feature = mpeg7.get_mpeg7_features(query_img)
+    candidate_images_mpeg7 = cand_selec.select_candidates(
+        "MPEG7", k, mpeg7_features, query_feature, image_dataset, n_imgs)
+    print("MPEG7 Candidate Selection time: %0.3fs" % (time() - t0))
+
     # ----------- Constraint Creation ---------------
     t0 = time()
-    candidate_bovw_descripSet = gen_cons.process_img_descrip(
-        candidate_images_bovw, gen_cons.generate_img_descrip(candidate_images_bovw))
+    bovw_cons = gen_cons.Constraints([], [], [], [], [])
+    mpeg7_cons = gen_cons.Constraints([], [], [], [], [])
+    candidate_images_bovw, bovw_cons.neighborhoods, bovw_cons.ml, bovw_cons.cl, bovw_cons.ml_g, bovw_cons.cl_g = gen_cons.generate_constraints(
+        candidate_images_bovw, image_classSet)
+    candidate_images_mpeg7, mpeg7_cons.neighborhoods, mpeg7_cons.ml, mpeg7_cons.cl, mpeg7_cons.ml_g, mpeg7_cons.cl_g = gen_cons.generate_constraints(
+        candidate_images_mpeg7, image_classSet)
     print("Constraint Creation time: %0.3fs" % (time() - t0))
-    print(candidate_bovw_descripSet)
+    print("checkpoint - mew")
 
 
 if __name__ == "__main__":
