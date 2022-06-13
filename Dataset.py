@@ -10,14 +10,15 @@ import csv
 
 
 class Dataset:
-    def __init__(self, img, filename, filepath, descripList):
+    def __init__(self, img, filename, filepath, descripList, feature):
         self.img = img
         self.filename = filename
         self.filepath = filepath
         self.descripList = descripList
+        self.feature = feature
 
     def __repr__(self):
-        return "Image: % s, Description List: % s" % (self.filename, self.descripList)
+        return "Image: % s, Description List: % s, Feature: %s" % (self.filename, self.descripList, self.feature)
 
 # Image Description class for easy access
 
@@ -28,7 +29,7 @@ class ImageDescrip:
         self.imgList = imgList
 
     def __repr__(self):
-        return "Image Description: % s, ImageList: % s " % (self.descrip, self.imgList)
+        return "Image Description: % s, ImageList: % s" % (self.descrip, self.imgList)
 
 # Create Grayscale
 
@@ -66,7 +67,7 @@ def create_dataset_object(img_file):
            file: path for an image
     '''
     img = cv2.imread(img_file)
-    return Dataset(img, img_file[-10:-4], img_file, [])
+    return Dataset(img, img_file[-10:-4], img_file, [], None)
 
 # Create Image Data Set
 

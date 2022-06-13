@@ -177,7 +177,8 @@ def get_bovw_features(query_img, bovw: BOVW):
     query_lbp = []
     for pat in query_patches:
         f = lbp_features(pat, 2, 8)
-    query_lbp.append(f)
+        query_lbp.append(f)
+        
     query_lbp = np.array(query_lbp, copy=False)
     # get visual words for query
     y = bovw_kmeans_model.predict(query_lbp)

@@ -4,7 +4,6 @@ import argparse
 import matplotlib.pyplot as plt
 import os
 from time import time
-from sklearn.cluster import KMeans
 from joblib import Parallel, delayed
 import Dataset as dataset
 import bag_of_visual_words as bovw

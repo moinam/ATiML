@@ -34,5 +34,6 @@ def select_candidates(f_name, k, feature_set, query_feature, image_dataset, n_im
     dists = euclidean_dist(f_name, feature_set, query_feature, n_imgs)
     k_cbir = np.argsort(dists)[:k]
     for i in range(k):
+        image_dataset[k_cbir[i]].feature = feature_set[k_cbir[i]]
         imgs.append(image_dataset[k_cbir[i]])
     return imgs
