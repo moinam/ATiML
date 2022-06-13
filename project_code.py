@@ -100,10 +100,12 @@ def create_dataset():
     global image_dataset
     image_dataset = Parallel(n_jobs=-1)(delayed(create_dataset_object)(file)
                                         for file in glob.glob(imdir))
+    image_dataset = image_dataset[:600]
 
     # total of images
     global n_imgs
-    n_imgs = len(image_dataset)
+    #n_imgs = len(image_dataset)
+    n_imgs = 500
 
 # Extract ImageList
 
@@ -404,10 +406,32 @@ def execute_surf(dataset, threshold):
 
     return 0
 
+    #--------------------SIFT---------------
+
+def execute_sift(dataset):
+    '''Creates Speeded-Up Robust Features\n
+       Parameters
+           dataset: image dataset array
+    '''
+    t0 = time()
+    sift = cv2.SIFT_create()
+    keypoints = []
+    descriptors = []
+    for img in image_dataset:
+        keypoints_ind, descriptors_ind = sift.detectAndCompute(cv2.cvtColor(img.img, cv2.COLOR_BGR2GRAY),None)
+        keypoints.append(keypoints_ind)
+        descriptors.append(descriptors_ind)
+    return keypoints, descriptors
+
+def get_sift_features(query_img):
+    sift = cv2.SIFT_create()
+    query_kp, query_desc = sift.detectAndCompute(cv2.cvtColor(query_img, cv2.COLOR_BGR2GRAY),None)
+    return query_desc
+
+
 # ------------------------- Candidate Selection ----------------------------
 
-
-def euclidean_dist(f_name, img_feats, query_feats):
+def euclidean_dist(f_name, img_feats, query_feats, img_kp = 0, query_kp = 0):
     '''Calculates the Euclidean distance for the given features\n
        Parameters
            img_feats: candidate image features
@@ -424,6 +448,13 @@ def euclidean_dist(f_name, img_feats, query_feats):
                 np.sum((img_feats[i][1] - query_feats[1]) ** 2)) + np.sqrt(
                 np.sum((img_feats[i][2] - query_feats[2]) ** 2))
             dists.append(diq)
+    elif f_name == "SIFT":
+        for i in range(n_imgs):
+            bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
+            matches = bf.match(img_feats[i],query_feats)
+            matches = sorted(matches, key = lambda x:x.distance)
+            matches = len(matches)
+            dists.append(matches)
     return dists
 
 
@@ -450,8 +481,28 @@ def extract_feature_query(f_name, query_img):
         query_feats, _ = np.histogram(y, bins=range(n_dic+1), density=True)
     elif f_name == "MPEG7":
         query_feats = get_mpeg7_features(query_img)
+    elif f_name == "SIFT":
+        query_feats = get_sift_features(query_img)
     return query_feats
+# #sift.detectAndCompute(cv2.cvtColor(img.img, cv2.COLOR_BGR2GRAY),None)
+# def matcher_sift(k,df_kp, img_feats, query_img, query_kp, query_feats):
+#     dists = []
+#     for i in range(n_imgs):
+#         bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
+#         matches = bf.match(img_feats[i],query_feats)
+#         matches = sorted(matches, key = lambda x:x.distance)
+#         match_img = cv2.drawMatches(image_dataset[i].grayscale, df_kp[i], query_img, query_kp, matches[:k], None, flags=2)
+#         dists.append(match_img)
+#         #dists.append(np.ravel(match_img, order='C'))
+#     return dists
 
+# def sift_select_candidates(k, df_kp, img_feats, query_img, query_kp, query_feats):
+#     imgs = []
+#     dists = matcher_sift(k,df_kp, img_feats, query_img, query_kp, query_feats)
+#     k_cbir = np.argsort(dists)[:k]
+#     for i in range(k):
+#         imgs.append(image_dataset[k_cbir[i]])
+#     return imgs
 
 def select_candidates(f_name, k, feature_set, query_feature):
     '''Generates Candidates for clustering using kNN\n
@@ -461,11 +512,17 @@ def select_candidates(f_name, k, feature_set, query_feature):
            query_feature: query image feature
     '''
     imgs = []
-    dists = euclidean_dist(f_name, feature_set, query_feature)
-    k_cbir = np.argsort(dists)[:k]
-    for i in range(k):
-        imgs.append(image_dataset[k_cbir[i]])
-    return imgs
+    if f_name == "SIFT":
+        dists = euclidean_dist(f_name, feature_set, query_feature)
+        k_cbir = np.argsort(dists)[::-1][:k]
+        for i in range(k):
+            imgs.append(image_dataset[k_cbir[i]])
+    else:
+        dists = euclidean_dist(f_name, feature_set, query_feature)
+        k_cbir = np.argsort(dists)[:k]
+        for i in range(k):
+            imgs.append(image_dataset[k_cbir[i]])
+        return imgs
 
 # ------------------------- Constraints Creation ----------------------------
 
@@ -555,42 +612,57 @@ def main():
     print("Data Set Creation time: %0.3fs" % (time() - t0))
     # ------------------- SURF ----------------------
     #surf_features = execute_surf(image_dataset, 400)
+    # ------------------- SIFT ---------------------
+    t0 = time()
+    sift_keypoints, sift_desc = execute_sift(image_dataset)
+    print("SIFT features Creation time: %0.3fs" % (time() - t0))   
+    # ----------- Candidate Selection ---------------
+    t0 = time()
+    query_desc = get_sift_features(query_img)
+    candidate_images_sift = select_candidates("SIFT",k, sift_desc, query_desc)
+    print("Candidate Selection time: %0.3fs" % (time() - t0))
+    # ----------- Constraint Creation ---------------
+    t0 = time()
+    cand_img_sift_descripList = generate_img_descrip(candidate_images_sift)
+    cand_img_sift_descripSet = process_img_descrip(candidate_images_sift, cand_img_sift_descripList)
+    print("Constraint Creation time: %0.3fs" % (time() - t0))
+    print(cand_img_sift_descripSet)
     # ----------- Bag of Visual Words ---------------
-    t0 = time()
-    bovw_features = execute_Bovw(
-        image_dataset, tam_patch, n_patches, random_state)
-    print("BOVW features Creation time: %0.3fs" % (time() - t0))
-    # ----------- Candidate Selection ---------------
-    t0 = time()
-    query_feature = extract_feature_query("BOVW", query_img)
-    candidate_images_bovw = select_candidates(
-        k, bovw_features, query_feature)
-    print("Candidate Selection time: %0.3fs" % (time() - t0))
+    # t0 = time()
+    # bovw_features = execute_Bovw(
+    #     image_dataset, tam_patch, n_patches, random_state)
+    # print("BOVW features Creation time: %0.3fs" % (time() - t0))
+    # # ----------- Candidate Selection ---------------
+    # t0 = time()
+    # query_feature = extract_feature_query("BOVW", query_img)
+    # candidate_images_bovw = select_candidates(
+    #     k, bovw_features, query_feature)
+    # print("Candidate Selection time: %0.3fs" % (time() - t0))
     # ----------- Constraint Creation ---------------
-    t0 = time()
-    cand_img_bovw_descripList = generate_img_descrip(candidate_images_bovw)
-    cand_img_bovw_descripSet = process_img_descrip(
-        candidate_images_bovw, cand_img_bovw_descripList)
-    print("Constraint Creation time: %0.3fs" % (time() - t0))
-    print(cand_img_bovw_descripSet)
+    # t0 = time()
+    # cand_img_bovw_descripList = generate_img_descrip(candidate_images_bovw)
+    # cand_img_bovw_descripSet = process_img_descrip(
+    #     candidate_images_bovw, cand_img_bovw_descripList)
+    # print("Constraint Creation time: %0.3fs" % (time() - t0))
+    # print(cand_img_bovw_descripSet)
 
-    # ----------- MPEG7 Feature extraction ----------
-    t0 = time()
-    mpeg7_features = execute_mpeg7(image_dataset)
-    print("MPEG7 features Creation time: %0.3fs" % (time() - t0))
-    # ----------- Candidate Selection ---------------
-    t0 = time()
-    query_feature = extract_feature_query("MPEG7", query_img)
-    candidate_images_mpeg7 = select_candidates(
-        "MPEG7", k, mpeg7_features, query_feature)
-    print("Candidate Selection time: %0.3fs" % (time() - t0))
-    # ----------- Constraint Creation ---------------
-    t0 = time()
-    cand_img_mpeg7_descripList = generate_img_descrip(candidate_images_mpeg7)
-    cand_img_mpeg7_descripSet = process_img_descrip(
-        candidate_images_mpeg7, cand_img_mpeg7_descripList)
-    print("Constraint Creation time: %0.3fs" % (time() - t0))
-    print(cand_img_mpeg7_descripSet)
+    # # ----------- MPEG7 Feature extraction ----------
+    # t0 = time()
+    # mpeg7_features = execute_mpeg7(image_dataset)
+    # print("MPEG7 features Creation time: %0.3fs" % (time() - t0))
+    # # ----------- Candidate Selection ---------------
+    # t0 = time()
+    # query_feature = extract_feature_query("MPEG7", query_img)
+    # candidate_images_mpeg7 = select_candidates(
+    #     "MPEG7", k, mpeg7_features, query_feature)
+    # print("Candidate Selection time: %0.3fs" % (time() - t0))
+    # # ----------- Constraint Creation ---------------
+    # t0 = time()
+    # cand_img_mpeg7_descripList = generate_img_descrip(candidate_images_mpeg7)
+    # cand_img_mpeg7_descripSet = process_img_descrip(
+    #     candidate_images_mpeg7, cand_img_mpeg7_descripList)
+    # print("Constraint Creation time: %0.3fs" % (time() - t0))
+    # print(cand_img_mpeg7_descripSet)
 
 
 if __name__ == "__main__":
