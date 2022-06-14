@@ -87,6 +87,7 @@ class PC_Kmeans:
 
 
     def init_centers(self, data, neighborhoods,y):
+        data = np.array(data)
         neighborhoods = sorted(neighborhoods, key=len,reverse=True)  # srot neighborhoods base on size
         neighborhood_centers = np.array([data[neighborhood].mean(axis=0) for neighborhood in neighborhoods])
         #neighborhood_sizes = np.array([len(neighborhood) for neighborhood in neighborhoods])

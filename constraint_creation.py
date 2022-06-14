@@ -1,16 +1,22 @@
 import random
 from Dataset import ImageDescrip
 # ------------------------- Constraints Creation ----------------------------
+
+
 class Constraints:
-    def __init__(self, ml, cl, ml_g, cl_g, neighborhoods):
+    def __init__(self, ml, cl, ml_g, cl_g, neighborhoods, descripList, x, y):
         self.ml = ml
         self.cl = cl
         self.ml_g = ml_g
         self.cl_g = cl_g
         self.neighborhoods = neighborhoods
+        self.descripList = descripList
+        self.x = x
+        self.y = y
 
     def __repr__(self):
         return "Must Link Graph: % s, Cannot Link Graph: % s, Neighborhoods: %s" % (self.ml_g, self.cl_g, self.neighborhoods)
+
 
 def generate_img_descrip(imgList, image_classSet):
     descripList = []
@@ -31,11 +37,14 @@ def generate_img_descrip(imgList, image_classSet):
 def process_img_descrip(imgList, descripList):
     descripSet = []
     neighborhoods = []
+    y_labels = []
     for img in imgList:
         if(len(img.descripList) > 1):
             descrip = random.choice(img.descripList)
             img.descripList = []
             img.descripList.append(descrip)
+
+        y_labels.append(descripList.index(img.descripList[0]))
 
     for descrip in descripList:
         ImageList = []
@@ -47,15 +56,16 @@ def process_img_descrip(imgList, descripList):
             descripSet.append(ImageDescrip(descrip, ImageList))
             neighborhoods.append(ImageList)
 
-    return descripSet, neighborhoods
+    return descripSet, neighborhoods, y_labels
 
 
-def generate_constraints(imgList, image_classSet):
+def generate_constraints(imgList, x, image_classSet):
     must_link = []
     cannot_link = []
-    candidate_descripSet, neighborhoods = process_img_descrip(
-        imgList, generate_img_descrip(imgList, image_classSet))
-    
+    descripList = generate_img_descrip(imgList, image_classSet)
+    candidate_descripSet, neighborhoods, y_labels = process_img_descrip(
+        imgList, descripList)
+
     for set in candidate_descripSet:
         for i in set.imgList:
             for j in set.imgList:
@@ -68,10 +78,12 @@ def generate_constraints(imgList, image_classSet):
                 for i in set1.imgList:
                     for j in set2.imgList:
                         cannot_link.append((i, j))
-    
-    ml_graph, cl_graph =transitive_entailment_graph(must_link, cannot_link, len(imgList))
 
-    return imgList, neighborhoods, must_link, cannot_link, ml_graph, cl_graph
+    ml_graph, cl_graph = transitive_entailment_graph(
+        must_link, cannot_link, len(imgList))
+
+    return imgList, Constraints(must_link, cannot_link,
+                                ml_graph, cl_graph, neighborhoods, descripList, x, y_labels)
 
 
 def transitive_entailment_graph(ml, cl, dslen):

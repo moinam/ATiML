@@ -40,6 +40,7 @@ def select_candidates(f_name, k, feature_set, query_feature, image_dataset, n_im
            query_feature: query image feature
     '''
     imgs = []
+    features = []
     dists = dist(f_name, feature_set, query_feature, n_imgs)
     if f_name == "SIFT":
         k_cbir = np.argsort(dists)[::-1][:k]
@@ -48,4 +49,5 @@ def select_candidates(f_name, k, feature_set, query_feature, image_dataset, n_im
     for i in range(k):
         image_dataset[k_cbir[i]].feature = feature_set[k_cbir[i]]
         imgs.append(image_dataset[k_cbir[i]])
-    return imgs
+        features.append(feature_set[k_cbir[i]])
+    return imgs, features
