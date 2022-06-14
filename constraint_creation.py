@@ -19,6 +19,11 @@ class Constraints:
 
 
 def generate_img_descrip(imgList, image_classSet):
+    '''Serarches for available description labels in candidate images\n
+       Parameters
+           imgList: image dataset array
+           image_classSet: label class array
+    '''
     descripList = []
     for cla in image_classSet:
         ImageList = []
@@ -35,6 +40,11 @@ def generate_img_descrip(imgList, image_classSet):
 
 
 def process_img_descrip(imgList, descripList):
+    '''Attaches description labels with images\n
+       Parameters
+           imgList: image dataset array
+           descripList: available label array
+    '''
     descripSet = []
     neighborhoods = []
     y_labels = []
@@ -60,6 +70,12 @@ def process_img_descrip(imgList, descripList):
 
 
 def generate_constraints(imgList, x, image_classSet):
+    '''Generates constraints and prepares the Constraints class\n
+       Parameters
+           imgList: image dataset array
+           x: feature array
+           image_classSet: label class array
+    '''
     must_link = []
     cannot_link = []
     descripList = generate_img_descrip(imgList, image_classSet)
@@ -87,6 +103,12 @@ def generate_constraints(imgList, x, image_classSet):
 
 
 def transitive_entailment_graph(ml, cl, dslen):
+    '''Creates a graph using trasnsitivity\n
+       Parameters
+           ml: must links
+           cl: cannot links
+           dslen: length of images
+    '''
     ml_graph = {}
     cl_graph = {}
     for i in range(dslen):

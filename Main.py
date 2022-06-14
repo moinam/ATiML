@@ -22,7 +22,6 @@ parser.add_argument("--query", required=True)
 # ---------------------------------
 
 # -------------- Parameter Declaration -------------------
-image_dataset = []
 img_folder_path = '\\VOCtrainval_06-Nov-2007\\VOCdevkit\\VOC2007\\JPEGImages\\'
 img_class_path = '\\VOCtrainval_06-Nov-2007\\VOCdevkit\\VOC2007\\ImageSets\\Main\\processed_files\\'
 img_class_set_names = [{'name': 'aeroplane', 'type': 'vehicle'},
@@ -45,14 +44,90 @@ img_class_set_names = [{'name': 'aeroplane', 'type': 'vehicle'},
                        {'name': 'sofa', 'type': 'furniture'},
                        {'name': 'train', 'type': 'vehicle'},
                        {'name': 'tvmonitor', 'type': 'electronics'}]
-image_classSet = []
-n_imgs = 0
 # BOVW parameters
 bovw_kmeans_model = None
 tam_patch = (15, 15)
 n_patches = 250
 random_state = 1
 n_dic = 50  # size of the dictionary
+
+
+def gen_clus(c_name, cand_img, cons):
+    '''Generate and Print Constrainted Cluster\n
+       Parameters
+           c_name: cluster name
+           cand_img: candidate image list
+           cons: Constraint class object
+    '''
+    if c_name == "COP":
+        '''---------------- COP-Kmeans ---------------'''
+        c_kmeans = COPK.COP_KMeans(
+            len(cons.descripList), cons.ml_g, cons.cl_g)
+        c_kmeans.fit(cons.x)
+    else:
+        '''---------------- PC-Kmeans ---------------'''
+        c_kmeans = PCK.PC_Kmeans(len(cons.descripList), cons.ml_g, cons.cl_g,
+                              cons.neighborhoods, cons.y)
+        c_kmeans.fit(cons.x)
+
+    print(f'{c_name} Kmeans Clusters:')
+    for i in range(len(c_kmeans.clusters)):
+        print(f'Cluster {i+1} :')
+        count = 0
+        for index in c_kmeans.clusters[i]:
+            count += 1
+            if count != len(c_kmeans.clusters[i]):
+                print(f'{cand_img[index].filename}, ', end='')
+            else:
+                print(f'{cand_img[index].filename}.')
+
+    return c_kmeans, 
+
+def execute(f_name, query_img, k, img_classSet, img_dataset, n_imgs):
+    '''Generate and Print Constrainted Cluster\n
+       Parameters
+           f_name: cluster name
+           query_img: the query image
+           k: k neighbours for kNN
+           img_classSet: label class array
+           img_dataset: image dataset
+           n_imgs: Length of img List
+    '''
+    if f_name == "BOVW":
+        print('----------- Bag of Visual Words -----------')
+        t0 = time()
+        bovw_param = bovw.BOVW(random_state=random_state,
+                               n_patches=n_patches, tam_patch=tam_patch, n_dic=n_dic)
+        bovw_features = bovw.execute_Bovw(
+            img_dataset, bovw_param, n_imgs)
+        query_feature = bovw.get_bovw_features(query_img, bovw_param)
+        print("BOVW features Creation time: %0.3fs" % (time() - t0))
+    elif f_name == "SIFT":
+        print('----------- SIFT -----------')
+        t0 = time()
+        sift_keypoints, sift_desc = SIFT.execute_sift(img_dataset)
+        query_feature = SIFT.get_sift_features(query_img)
+        print("SIFT features Creation time: %0.3fs" % (time() - t0))
+    elif f_name == "MPEG7":
+        print('----------- MPEG7 -----------')
+        t0 = time()
+        mpeg7_features = mpeg7.execute_mpeg7(img_dataset)
+        query_feature = mpeg7.get_mpeg7_features(query_img)
+        print("MPEG7 features Creation time: %0.3fs" % (time() - t0))
+
+    '''----------- Candidate Selection ---------------'''
+    t0 = time()
+    cand_img, cand_features = cand_selec.select_candidates(
+        "MPEG7", k, mpeg7_features, query_feature, img_dataset, n_imgs)
+    print("Candidate Selection time: %0.3fs" % (time() - t0))
+
+    '''----------- Constraint Creation ---------------'''
+    t0 = time()
+    cand_img, cons = gen_cons.generate_constraints(
+        cand_img, cand_features, img_classSet)
+    print("Constraint Creation time: %0.3fs" % (time() - t0))
+
+    return cand_img, cons
 
 
 def main():
@@ -71,87 +146,12 @@ def main():
     image_dataset, n_imgs = dataset.create_dataset(img_folder_path)
     print("Data Set Creation time: %0.3fs" % (time() - t0))
 
-    ''' ---------- Bag of Visual Words Feature Extraction ---------------'''
-    t0 = time()
-    bovw_param = bovw.BOVW(random_state=random_state,
-                           n_patches=n_patches, tam_patch=tam_patch, n_dic=n_dic)
-    bovw_features = bovw.execute_Bovw(
-        image_dataset, bovw_param, n_imgs)
-    print("BOVW features Creation time: %0.3fs" % (time() - t0))
+    '''Extract image features, candidates using knn & create constraints for given feature name'''
+    cand_img, cons = execute("MPEG7", query_img, k, image_classSet, image_dataset, n_imgs)
 
-    '''----------- SIFT Feature extraction ----------'''
-    t0 = time()
-    sift_keypoints, sift_desc = SIFT.execute_sift(image_dataset)
-    print("SIFT features Creation time: %0.3fs" % (time() - t0))
-
-    '''----------- MPEG7 Feature extraction ----------'''
-    t0 = time()
-    mpeg7_features = mpeg7.execute_mpeg7(image_dataset)
-    print("MPEG7 features Creation time: %0.3fs" % (time() - t0))
-
-    '''----------- Candidate Selection ---------------'''
-    t0 = time()
-    query_feature = bovw.get_bovw_features(query_img, bovw_param)
-    candidate_images_bovw = cand_selec.select_candidates(
-        "BOVW", k, bovw_features, query_feature, image_dataset, n_imgs)
-    print("BOVW Candidate Selection time: %0.3fs" % (time() - t0))
-    t0 = time()
-    query_desc = SIFT.get_sift_features(query_img)
-    candidate_images_sift = cand_selec.select_candidates(
-        "SIFT", k, sift_desc, query_desc, image_dataset, n_imgs)
-    print("SIFT Candidate Selection time: %0.3fs" % (time() - t0))
-    t0 = time()
-    query_feature = mpeg7.get_mpeg7_features(query_img)
-    candidate_images_mpeg7, cand_mpeg7_features = cand_selec.select_candidates(
-        "MPEG7", k, mpeg7_features, query_feature, image_dataset, n_imgs)
-    print("MPEG7 Candidate Selection time: %0.3fs" % (time() - t0))
-
-    '''----------- Constraint Creation ---------------'''
-    t0 = time()
-    candidate_images_bovw, bovw_cons = gen_cons.generate_constraints(
-        candidate_images_bovw, image_classSet)
-    candidate_images_sift, sift_cons = gen_cons.generate_constraints(
-        candidate_images_sift, image_classSet)
-    candidate_images_mpeg7, mpeg7_cons = gen_cons.generate_constraints(
-        candidate_images_mpeg7, cand_mpeg7_features, image_classSet)
-    print("Constraint Creation time: %0.3fs" % (time() - t0))
-
-    '''---------------- COP-Kmeans ---------------'''
-
-    # COP_Kmeans test repeat n times
-    cop_kmeans = COPK.COP_KMeans(
-        len(mpeg7_cons.descripList), mpeg7_cons.ml_g, mpeg7_cons.cl_g)
-    cop_kmeans.fit(mpeg7_cons.x)
-    predict_labels_copkmeans = cop_kmeans.is_clustered
-    print("COP - Kmeans Clusters:")
-    for i in range(len(cop_kmeans.clusters)):
-        print(f'Cluster {i+1} :')
-        count = 0
-        for index in cop_kmeans.clusters[i]:
-            count += 1
-            if count != len(cop_kmeans.clusters[i]):
-                print(f'{candidate_images_mpeg7[index].filename}, ', end='')
-            else:
-                print(f'{candidate_images_mpeg7[index].filename}.')
-
-    '''---------------- PC-Kmeans ---------------'''
-
-    # PC_Kmeans  test repeat n times
-    pc_kmeans = PCK.PC_Kmeans(len(mpeg7_cons.descripList), mpeg7_cons.ml_g, mpeg7_cons.cl_g,
-                              mpeg7_cons.neighborhoods, mpeg7_cons.y)
-    pc_kmeans.fit(mpeg7_cons.x)
-    predict_labels_pckmeans = pc_kmeans.is_clustered
-    print("PC - Kmeans Clusters:")
-    for i in range(len(pc_kmeans.clusters)):
-        print(f'Cluster {i+1} :')
-        count = 0
-        for index in pc_kmeans.clusters[i]:
-            count += 1
-            if count != len(pc_kmeans.clusters[i]):
-                print(f'{candidate_images_mpeg7[index].filename}, ', end='')
-            else:
-                print(f'{candidate_images_mpeg7[index].filename}.')
-
+    '''Generate Clusters'''
+    copk_clus = gen_clus("COP", cand_img, cons)
+    pck_clus = gen_clus("PC", cand_img, cons)
 
 if __name__ == "__main__":
     main()
