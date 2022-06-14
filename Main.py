@@ -52,17 +52,18 @@ random_state = 1
 n_dic = 50  # size of the dictionary
 
 
-def gen_clus(c_name, cand_img, cons):
+def gen_clus(c_name, cand_img, cons, f_name):
     '''Generate and Print Constrainted Cluster\n
        Parameters
            c_name: cluster name
            cand_img: candidate image list
            cons: Constraint class object
+           f_name: feature name
     '''
     if c_name == "COP":
         '''---------------- COP-Kmeans ---------------'''
         c_kmeans = COPK.COP_KMeans(
-            len(cons.descripList), cons.ml_g, cons.cl_g)
+            len(cons.descripList), cons.ml_g, cons.cl_g, f_name)
         c_kmeans.fit(cons.x)
     else:
         '''---------------- PC-Kmeans ---------------'''
@@ -98,27 +99,27 @@ def execute(f_name, query_img, k, img_classSet, img_dataset, n_imgs):
         t0 = time()
         bovw_param = bovw.BOVW(random_state=random_state,
                                n_patches=n_patches, tam_patch=tam_patch, n_dic=n_dic)
-        bovw_features = bovw.execute_Bovw(
+        features = bovw.execute_Bovw(
             img_dataset, bovw_param, n_imgs)
         query_feature = bovw.get_bovw_features(query_img, bovw_param)
         print("BOVW features Creation time: %0.3fs" % (time() - t0))
     elif f_name == "SIFT":
         print('----------- SIFT -----------')
         t0 = time()
-        sift_keypoints, sift_desc = SIFT.execute_sift(img_dataset)
+        sift_keypoints, features = SIFT.execute_sift(img_dataset)
         query_feature = SIFT.get_sift_features(query_img)
         print("SIFT features Creation time: %0.3fs" % (time() - t0))
     elif f_name == "MPEG7":
         print('----------- MPEG7 -----------')
         t0 = time()
-        mpeg7_features = mpeg7.execute_mpeg7(img_dataset)
+        features = mpeg7.execute_mpeg7(img_dataset)
         query_feature = mpeg7.get_mpeg7_features(query_img)
         print("MPEG7 features Creation time: %0.3fs" % (time() - t0))
 
     '''----------- Candidate Selection ---------------'''
     t0 = time()
     cand_img, cand_features = cand_selec.select_candidates(
-        "MPEG7", k, mpeg7_features, query_feature, img_dataset, n_imgs)
+        f_name, k, features, query_feature, img_dataset, n_imgs)
     print("Candidate Selection time: %0.3fs" % (time() - t0))
 
     '''----------- Constraint Creation ---------------'''
@@ -150,8 +151,8 @@ def main():
     cand_img, cons = execute("MPEG7", query_img, k, image_classSet, image_dataset, n_imgs)
 
     '''Generate Clusters'''
-    copk_clus = gen_clus("COP", cand_img, cons)
-    pck_clus = gen_clus("PC", cand_img, cons)
+    copk_clus = gen_clus("COP", cand_img, cons, "MPEG7")
+    pck_clus = gen_clus("PC", cand_img, cons, "MPEG7")
 
 if __name__ == "__main__":
     main()
