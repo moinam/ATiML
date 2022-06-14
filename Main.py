@@ -10,6 +10,7 @@ import bag_of_visual_words as bovw
 import mpeg7_color_layout as mpeg7
 import candidate_selection as cand_selec
 import constraint_creation as gen_cons
+import sift as SIFT
 import PC_Kmeans as PCK
 import COP_Kmeans as COPK
 # --------Acepting Input----------
@@ -70,39 +71,52 @@ def main():
     image_dataset, n_imgs = dataset.create_dataset(img_folder_path)
     print("Data Set Creation time: %0.3fs" % (time() - t0))
 
-    # ----------- Bag of Visual Words ---------------
-    t0 = time()
-    bovw_param = bovw.BOVW(random_state=random_state,
-                           n_patches=n_patches, tam_patch=tam_patch, n_dic=n_dic)
-    bovw_features = bovw.execute_Bovw(
-        image_dataset, bovw_param, n_imgs)
-    print("BOVW features Creation time: %0.3fs" % (time() - t0))
+    # ----------- Bag of Visual Words Feature Extraction ---------------
+    # t0 = time()
+    # bovw_param = bovw.BOVW(random_state=random_state,
+    #                        n_patches=n_patches, tam_patch=tam_patch, n_dic=n_dic)
+    # bovw_features = bovw.execute_Bovw(
+    #     image_dataset, bovw_param, n_imgs)
+    # print("BOVW features Creation time: %0.3fs" % (time() - t0))
 
     # ----------- MPEG7 Feature extraction ----------
+    # t0 = time()
+    # mpeg7_features = mpeg7.execute_mpeg7(image_dataset)
+    # print("MPEG7 features Creation time: %0.3fs" % (time() - t0))
+
+    # ----------- SIFT Feature extraction ----------
     t0 = time()
-    mpeg7_features = mpeg7.execute_mpeg7(image_dataset)
-    print("MPEG7 features Creation time: %0.3fs" % (time() - t0))
+    sift_keypoints, sift_desc = SIFT.execute_sift(image_dataset)
+    print("SIFT features Creation time: %0.3fs" % (time() - t0))
 
     # ----------- Candidate Selection ---------------
-    t0 = time()
-    query_feature = bovw.get_bovw_features(query_img, bovw_param)
-    candidate_images_bovw = cand_selec.select_candidates(
-        "BOVW", k, bovw_features, query_feature, image_dataset, n_imgs)
-    print("BOVW Candidate Selection time: %0.3fs" % (time() - t0))
-    t0 = time()
-    query_feature = mpeg7.get_mpeg7_features(query_img)
-    candidate_images_mpeg7 = cand_selec.select_candidates(
-        "MPEG7", k, mpeg7_features, query_feature, image_dataset, n_imgs)
-    print("MPEG7 Candidate Selection time: %0.3fs" % (time() - t0))
+    # t0 = time()
+    # query_feature = bovw.get_bovw_features(query_img, bovw_param)
+    # candidate_images_bovw = cand_selec.select_candidates(
+    #     "BOVW", k, bovw_features, query_feature, image_dataset, n_imgs)
+    # print("BOVW Candidate Selection time: %0.3fs" % (time() - t0))
+    # t0 = time()
+    # query_feature = mpeg7.get_mpeg7_features(query_img)
+    # candidate_images_mpeg7 = cand_selec.select_candidates(
+    #     "MPEG7", k, mpeg7_features, query_feature, image_dataset, n_imgs)
+    # print("MPEG7 Candidate Selection time: %0.3fs" % (time() - t0))
+    # t0 = time()
+    query_desc = SIFT.get_sift_features(query_img)
+    candidate_images_sift = cand_selec.select_candidates(
+        "SIFT", k, sift_desc, query_desc, image_dataset, n_imgs)
+    print("Candidate Selection time: %0.3fs" % (time() - t0))
 
     # ----------- Constraint Creation ---------------
     t0 = time()
     bovw_cons = gen_cons.Constraints([], [], [], [], [])
     mpeg7_cons = gen_cons.Constraints([], [], [], [], [])
-    candidate_images_bovw, bovw_cons.neighborhoods, bovw_cons.ml, bovw_cons.cl, bovw_cons.ml_g, bovw_cons.cl_g = gen_cons.generate_constraints(
-        candidate_images_bovw, image_classSet)
-    candidate_images_mpeg7, mpeg7_cons.neighborhoods, mpeg7_cons.ml, mpeg7_cons.cl, mpeg7_cons.ml_g, mpeg7_cons.cl_g = gen_cons.generate_constraints(
-        candidate_images_mpeg7, image_classSet)
+    sift_cons = gen_cons.Constraints([], [], [], [], [])
+    # candidate_images_bovw, bovw_cons.neighborhoods, bovw_cons.ml, bovw_cons.cl, bovw_cons.ml_g, bovw_cons.cl_g = gen_cons.generate_constraints(
+    #     candidate_images_bovw, image_classSet)
+    # candidate_images_mpeg7, mpeg7_cons.neighborhoods, mpeg7_cons.ml, mpeg7_cons.cl, mpeg7_cons.ml_g, mpeg7_cons.cl_g = gen_cons.generate_constraints(
+    #     candidate_images_mpeg7, image_classSet)
+    candidate_images_sift, sift_cons.neighborhoods, sift_cons.ml, sift_cons.cl, sift_cons.ml_g, sift_cons.cl_g = gen_cons.generate_constraints(
+        candidate_images_sift, image_classSet)
     print("Constraint Creation time: %0.3fs" % (time() - t0))
     print("checkpoint - mew")
 
