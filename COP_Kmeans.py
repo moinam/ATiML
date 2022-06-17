@@ -25,13 +25,14 @@ class COP_KMeans:
             # print('for :',i)
             self.is_clustered = [-1] * len(data)
 
-            self.clusters = {}   # {0:[] , 1:[] , ... , k:[]}
+            self.clusters = {}  # {0:[] , 1:[] , ... , k:[]}
             for i in range(self.k):
                 self.clusters[i] = set()
 
             # find the distance between the point and cluster; choose the nearest centroid
             for x_index in range(len(data)):
-                distances = {center_index: np.linalg.norm(data[x_index] - self.centroids[center_index])for center_index in self.centroids}
+                distances = {center_index: np.linalg.norm(data[x_index] - self.centroids[center_index]) for center_index
+                             in self.centroids}
                 sorted_distances = sorted(distances.items(), key=lambda kv: kv[1])
                 empty_flag = True
 
@@ -68,7 +69,7 @@ class COP_KMeans:
             for centroid in self.centroids:
                 original_centroid = previous[centroid]
                 curr = self.centroids[centroid]
-                if np.sum((curr - original_centroid)/original_centroid * 100.0) > self.tolerance:
+                if np.sum((curr - original_centroid) / original_centroid * 100.0) > self.tolerance:
                     isOptimal = False
 
             if isOptimal:
@@ -132,3 +133,16 @@ class COP_KMeans:
                      for centroid in self.centroids]
         classification = distances.index(min(distances))
         return classification
+
+    def predict(self, data):
+
+        labels = []
+
+        for row in data:
+            dist = [np.linalg.norm(row - self.centroids[centroid])
+                    for centroid in self.centroids]
+
+            classification = dist.index(min(dist))
+            labels.append(classification)
+
+        return labels

@@ -2,7 +2,7 @@ import numpy as np
 
 
 class PC_Kmeans:
-    def __init__(self, k, ml, cl, neighborhoods, y,w=1, tolerance=0.00001, max_iterations = 300):
+    def __init__(self, k, ml, cl, neighborhoods, y, w=1, tolerance=0.00001, max_iterations=300):
         self.k = k
         self.ml = ml  # is transitive graph
         self.cl = cl  # is graph
@@ -12,12 +12,11 @@ class PC_Kmeans:
         self.tolerance = tolerance
         self.max_iterations = max_iterations
 
-
-    def fit(self,data):
+    def fit(self, data):
 
         # Initialize centroids
         self.centroids = {}
-        cluster_centers = self.init_centers(data, self.neighborhoods,self.y)
+        cluster_centers = self.init_centers(data, self.neighborhoods, self.y)
         for i in range(len(cluster_centers)):
             self.centroids[i] = cluster_centers[i]
 
@@ -50,11 +49,11 @@ class PC_Kmeans:
             if isOptimal:
                 break
 
-
-    def assign_clusters(self,data,cluster_centers,ml,cl,w):
+    def assign_clusters(self, data, cluster_centers, ml, cl, w):
         self.is_clustered = [-1] * len(data)
         for x_index in range(len(data)):
-            h = [self.objective_function(data, x_index, cluster_centers, cluster_index, self.is_clustered, ml, cl, w) for cluster_index in range(self.k)]
+            h = [self.objective_function(data, x_index, cluster_centers, cluster_index, self.is_clustered, ml, cl, w)
+                 for cluster_index in range(self.k)]
             center_index = np.argmin(h)
             self.is_clustered[x_index] = center_index
             self.clusters[center_index].add(x_index)
@@ -84,13 +83,11 @@ class PC_Kmeans:
 
         return distance + ml_penalty + cl_penalty
 
-
-
-    def init_centers(self, data, neighborhoods,y):
+    def init_centers(self, data, neighborhoods, y):
         data = np.array(data)
-        neighborhoods = sorted(neighborhoods, key=len,reverse=True)  # srot neighborhoods base on size
+        neighborhoods = sorted(neighborhoods, key=len, reverse=True)  # srot neighborhoods base on size
         neighborhood_centers = np.array([data[neighborhood].mean(axis=0) for neighborhood in neighborhoods])
-        #neighborhood_sizes = np.array([len(neighborhood) for neighborhood in neighborhoods])
+        # neighborhood_sizes = np.array([len(neighborhood) for neighborhood in neighborhoods])
 
         if len(neighborhoods) > self.k:
             # Select K largest neighborhoods' centroids
@@ -113,9 +110,9 @@ class PC_Kmeans:
                     np.append(cluster_centers, [data[x_index]], axis=0)
                     break
 
-
             if len(neighborhoods) < self.k:
-                remaining_cluster_centers = data[np.random.choice(len(data), self.k - len(neighborhoods), replace=False), :]
+                remaining_cluster_centers = data[
+                                            np.random.choice(len(data), self.k - len(neighborhoods), replace=False), :]
                 cluster_centers = np.concatenate([cluster_centers, remaining_cluster_centers])
 
         return cluster_centers
@@ -130,10 +127,26 @@ class PC_Kmeans:
             if len(lst) != 0:
                 self.centroids[_center] = np.average(avgArr, axis=0)
         clusters_center = []
-        for key,value in self.centroids.items():
+        for key, value in self.centroids.items():
             clusters_center.append(value)
 
         return np.array(clusters_center)
 
+    def pred(self, data):
+        distances = [np.linalg.norm(data - self.centroids[centroid])
+                     for centroid in self.centroids]
+        classification = distances.index(min(distances))
+        return classification
 
+    def predict(self, data):
 
+        labels = []
+
+        for row in data:
+            dist = [np.linalg.norm(row - self.centroids[centroid])
+                    for centroid in self.centroids]
+
+            classification = dist.index(min(dist))
+            labels.append(classification)
+
+        return labels
