@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from sklearn import metrics
 
 def pairwise_distance(f_name, img_feats, query_feats):
     if f_name == "BOVW":
@@ -17,6 +18,25 @@ def pairwise_distance(f_name, img_feats, query_feats):
 
     return diq
 
+# def silhouette_score(f_name, data_points, labels, k):
+#     res = metrics.silhouette_score(data_points, labels, metric='euclidean')
+#     return res
+
+
+def my_rand_score(true_labels, pred_labels):
+    return metrics.adjusted_rand_score(true_labels, pred_labels)
+
+def my_nmi(true_labels, pred_labels):
+    return metrics.normalized_mutual_info_score(true_labels, pred_labels)
+
+def my_homogeneity_score(labels_true, labels_pred):
+    return metrics.homogeneity_score(labels_true, labels_pred)
+
+def my_completeness_score(labels_true, labels_pred):
+    return metrics.completeness_score(labels_true, labels_pred)
+
+def my_v_measure_score(labels_true, labels_pred):
+    return metrics.v_measure_score(labels_true, labels_pred)
 
 def silhouette_score(f_name, data_points, labels, k):
     num = len(labels)
