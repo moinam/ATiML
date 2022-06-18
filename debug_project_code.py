@@ -14,6 +14,8 @@ import constraint_creation as gen_cons
 import sift as SIFT
 import PC_Kmeans as PCK
 import COP_Kmeans as COPK
+import cluster_evaluation as clus_eval
+
 # --------Acepting Input----------
 # Initialize parser
 parser = argparse.ArgumentParser()
@@ -65,16 +67,17 @@ def gen_clus(c_name, cand_img, cons, f_name):
         '''---------------- COP-Kmeans ---------------'''
         c_kmeans = COPK.COP_KMeans(
             len(cons.descripList), cons.ml_g, cons.cl_g, f_name)
-        c_kmeans.fit(cons.x)
     else:
         '''---------------- PC-Kmeans ---------------'''
         c_kmeans = PCK.PC_Kmeans(len(cons.descripList), cons.ml_g, cons.cl_g,
-                              cons.neighborhoods, cons.y)
-        c_kmeans.fit(cons.x)
+                                 cons.neighborhoods, cons.y)
+
+    c_kmeans.fit(cons.x)
+    labels = c_kmeans.predict(cons.x)
 
     print(f'{c_name} Kmeans Clusters:')
     for i in range(len(c_kmeans.clusters)):
-        print(f'Cluster {i+1} :')
+        print(f'Cluster {i + 1} :')
         count = 0
         for index in c_kmeans.clusters[i]:
             count += 1
@@ -83,9 +86,10 @@ def gen_clus(c_name, cand_img, cons, f_name):
             else:
                 print(f'{cand_img[index].filename}.')
 
-    return c_kmeans, 
+    return c_kmeans, labels
 
-def execute(f_name, query_img, k, img_classSet, img_dataset, n_imgs):
+
+def gen_feats(f_name, query_img, k, img_classSet, img_dataset, n_imgs):
     '''Generate and Print Constrainted Cluster\n
        Parameters
            f_name: cluster name
@@ -123,13 +127,7 @@ def execute(f_name, query_img, k, img_classSet, img_dataset, n_imgs):
         f_name, k, features, query_feature, img_dataset, n_imgs)
     print("Candidate Selection time: %0.3fs" % (time() - t0))
 
-    '''----------- Constraint Creation ---------------'''
-    t0 = time()
-    cand_img, cons = gen_cons.generate_constraints(
-        cand_img, cand_features, img_classSet)
-    print("Constraint Creation time: %0.3fs" % (time() - t0))
-
-    return cand_img, cons
+    return cand_img, cand_features
 
 # %%
 t0 = time()
@@ -149,34 +147,73 @@ print("Data Set Creation time: %0.3fs" % (time() - t0))
 
 # %%
 '''Extract image features, candidates using knn & create constraints for given feature name'''
-cand_img_mpeg7, cons_mpeg7 = execute("MPEG7", query_img, k,
+cand_img_mpeg7, cand_features_mpeg7 = gen_feats("MPEG7", query_img, k,
                                      image_classSet, image_dataset, n_imgs)
-cand_img_bovw, cons_bovw = execute("BOVW", query_img, k,
+cand_img_bovw, cand_features_bovw = gen_feats("BOVW", query_img, k,
                                    image_classSet, image_dataset, n_imgs)
 
 
 # %%
 '''Extract image features, candidates using knn & create constraints for given feature name'''
-cand_img_sift, cons_sift = execute("SIFT", query_img, k,
+cand_img_sift, cand_features_sift = gen_feats("SIFT", query_img, k,
                          image_classSet, image_dataset, n_imgs)
 
 
 # %%
-'''Generate Clusters'''
-mpeg7_copk_clus = gen_clus("COP", cand_img_mpeg7, cons_mpeg7, "MPEG7")
-mpeg7_pck_clus = gen_clus("PC", cand_img_mpeg7, cons_mpeg7, "MPEG7")
+'''----------- Constraint Creation ---------------'''
+t0 = time()
+cand_img_mpeg7, cons_mpeg7 = gen_cons.generate_constraints(
+    cand_img_mpeg7, cand_features_mpeg7, image_classSet)
+cand_img_bovw, cons_bovw = gen_cons.generate_constraints(
+    cand_img_bovw, cand_features_bovw, image_classSet)
+cand_img_sift, cons_sift = gen_cons.generate_constraints(
+    cand_img_sift, cand_features_bovw, image_classSet)
+print("Constraint Creation time: %0.3fs" % (time() - t0))
 
 
 # %%
 '''Generate Clusters'''
-bovw_copk_clus = gen_clus("COP", cand_img_bovw, cons_bovw, "BOVW")
-bovw_pck_clus = gen_clus("PC", cand_img_bovw, cons_bovw, "BOVW")
+mpeg7_copk_clus, mpeg7_copk_labels = gen_clus(
+    "COP", cand_img_mpeg7, cons_mpeg7, "MPEG7")
+mpeg7_pck_clus, mpeg7_pck_labels = gen_clus(
+    "PC", cand_img_mpeg7, cons_mpeg7, "MPEG7")
+
+'''Evaluate Clustering'''
+print(
+    f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("MPEG7", cons_mpeg7.x, mpeg7_copk_labels, len(cons_mpeg7.descripList))}')
+print(
+    f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("MPEG7", cons_mpeg7.x, mpeg7_pck_labels, len(cons_mpeg7.descripList))}')
 
 
 # %%
 '''Generate Clusters'''
-sift_copk_clus = gen_clus("COP", cand_img_sift, cons_sift, "SIFT")
-sift_pck_clus = gen_clus("PC", cand_img_sift, cons_sift, "SIFT")
+bovw_copk_clus, bovw_copk_labels = gen_clus(
+    "COP", cand_img_bovw, cons_bovw, "BOVW")
+bovw_copk_clus, bovw_pck_labels = gen_clus(
+    "PC", cand_img_bovw, cons_bovw, "BOVW")
+
+'''Evaluate Clustering'''
+print(
+    f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("BOVW", cons_bovw.x, bovw_copk_labels, len(cons_bovw.descripList))}')
+print(
+    f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("BOVW", cons_bovw.x, bovw_pck_labels, len(cons_bovw.descripList))}')
+
+
+# %%
+'''Generate Clusters'''
+sift_copk_clus, sift_copk_labels = gen_clus(
+    "COP", cand_img_sift, cons_sift, "SIFT")
+sift_pck_clus, sift_pck_labels = gen_clus(
+    "PC", cand_img_sift, cons_sift, "SIFT")
+
+'''Evaluate Clustering'''
+print(
+    f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("SIFT", cons_sift.x, sift_copk_labels, len(cons_sift.descripList))}')
+print(
+    f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("SIFT", cons_sift.x, sift_pck_labels, len(cons_sift.descripList))}')
+
+
+# %%
 
 
 
