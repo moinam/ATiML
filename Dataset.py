@@ -104,6 +104,8 @@ def extract_imageDescrip(img_class_set_names, img_class_path):
             for row in my_reader:
                 if(row[1] == '-1'):
                     continue
+                if(row[0] == 'ï»¿000005'):
+                    row[0] = '000005'
                 entry.append(row[0])
 
         if descrip["type"] not in classSet:

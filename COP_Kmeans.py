@@ -1,5 +1,6 @@
 import random
 import numpy as np
+np.seterr(divide='ignore', invalid='ignore')
 import cv2
 
 
@@ -31,8 +32,12 @@ class COP_KMeans:
 
             # find the distance between the point and cluster; choose the nearest centroid
             for x_index in range(len(data)):
-                distances = {center_index: np.linalg.norm(data[x_index] - self.centroids[center_index]) for center_index
-                             in self.centroids}
+                if self.f_name == "SIFT":
+                    bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
+                    distances = {center_index: len(sorted(bf.match(
+                        data[x_index], self.centroids[center_index]), key=lambda x: x.distance))for center_index in self.centroids}
+                else:
+                    distances = {center_index: np.linalg.norm(data[x_index] - self.centroids[center_index])for center_index in self.centroids}
                 sorted_distances = sorted(distances.items(), key=lambda kv: kv[1])
                 empty_flag = True
 
