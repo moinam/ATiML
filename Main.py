@@ -136,7 +136,7 @@ def main():
     query = args.query
     path_query = os.getcwd() + img_folder_path + query + '.jpg'
     query_img = cv2.imread(path_query)
-    f_name = "SIFT"
+    f_name = "MPEG7"
 
     '''----------- Creating Data Set ------------------'''
     image_classSet = dataset.extract_imageDescrip(
