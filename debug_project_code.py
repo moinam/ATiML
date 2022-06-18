@@ -25,8 +25,8 @@ parser.add_argument("--query", required=True)
 # ---------------------------------
 
 # -------------- Parameter Declaration -------------------
-img_folder_path = '\\VOCtrainval_06-Nov-2007\\VOCdevkit\\VOC2007\\JPEGImages\\'
-img_class_path = '\\VOCtrainval_06-Nov-2007\\VOCdevkit\\VOC2007\\ImageSets\\Main\\processed_files\\'
+img_folder_path = '/VOCtrainval_06-Nov-2007/VOCdevkit/VOC2007/JPEGImages/'
+img_class_path = '/VOCtrainval_06-Nov-2007/VOCdevkit/VOC2007/ImageSets/Main/processed_files/'
 img_class_set_names = [{'name': 'aeroplane', 'type': 'vehicle'},
                        {'name': 'bicycle', 'type': 'vehicle'},
                        {'name': 'bird', 'type': 'animal'},
