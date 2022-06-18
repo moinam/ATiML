@@ -38,6 +38,14 @@ def my_completeness_score(labels_true, labels_pred):
 def my_v_measure_score(labels_true, labels_pred):
     return metrics.v_measure_score(labels_true, labels_pred)
 
+def my_davies_bouldin_score(fname, dataset, labels):
+    if (fname == "MPEG7"):
+        dataset = np.array(dataset)
+        dataset = dataset.reshape(dataset.shape[0], (dataset.shape[1]*dataset.shape[2]))
+        return metrics.davies_bouldin_score(dataset, labels)
+    else:
+        return metrics.davies_bouldin_score(dataset, labels)
+
 def silhouette_score(f_name, data_points, labels, k):
     num = len(labels)
     dist_matrix = []

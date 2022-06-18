@@ -14,6 +14,7 @@ import sift as SIFT
 import PC_Kmeans as PCK
 import COP_Kmeans as COPK
 import cluster_evaluation as clus_eval
+import numpy as np
 
 # --------Acepting Input----------
 # Initialize parser
@@ -161,7 +162,10 @@ def main():
     '''Evaluate Clustering'''
     print(f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, copk_labels, len(cons.descripList))}')
     print(f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, pck_labels, len(cons.descripList))}')
-    #print(cons.y)
+    
+    print(f'COPKMeans Davies Bouldin Score(n={k}): {clus_eval.my_davies_bouldin_score(f_name, cons.x, copk_labels)}')
+    print(f'PCKMeans Davies Bouldin Score(n={k}): {clus_eval.my_davies_bouldin_score(f_name, cons.x, pck_labels)}')
+
     print(f'COPKMeans Rand Score(n={k}): {clus_eval.my_rand_score(cons.y, copk_labels)}')
     print(f'PCKMeans Rand Score(n={k}): {clus_eval.my_rand_score(cons.y, pck_labels)}')
 
@@ -175,7 +179,11 @@ def main():
     print(f'PCKMeans Completeness Score(n={k}): {clus_eval.my_completeness_score(cons.y, pck_labels)}')
 
     print(f'COPKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, copk_labels)}')
-    print(f'PCKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, pck_labels)}')  
+    print(f'PCKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, pck_labels)}') 
+
+      
+
+
 
 if __name__ == "__main__":
     main()
