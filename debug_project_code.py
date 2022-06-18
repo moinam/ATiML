@@ -151,8 +151,8 @@ print("Data Set Creation time: %0.3fs" % (time() - t0))
 '''Extract image features, candidates using knn & create constraints for given feature name'''
 cand_img_mpeg7, cons_mpeg7 = execute("MPEG7", query_img, k,
                                      image_classSet, image_dataset, n_imgs)
-# cand_img_bovw, cons_bovw = execute("BOVW", query_img, k,
-#                                    image_classSet, image_dataset, n_imgs)
+cand_img_bovw, cons_bovw = execute("BOVW", query_img, k,
+                                   image_classSet, image_dataset, n_imgs)
 
 
 # %%
@@ -180,5 +180,3 @@ sift_pck_clus = gen_clus("PC", cand_img_sift, cons_sift, "SIFT")
 
 
 
-
-# %%

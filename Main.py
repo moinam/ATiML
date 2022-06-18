@@ -13,7 +13,7 @@ import constraint_creation as gen_cons
 import sift as SIFT
 import PC_Kmeans as PCK
 import COP_Kmeans as COPK
-import numpy as np
+import cluster_evaluation as clus_eval
 
 # --------Acepting Input----------
 # Initialize parser
@@ -53,7 +53,6 @@ n_patches = 250
 random_state = 1
 n_dic = 50  # size of the dictionary
 
-
 def gen_clus(c_name, cand_img, cons, f_name):
     '''Generate and Print Constrainted Cluster\n
        Parameters
@@ -88,7 +87,7 @@ def gen_clus(c_name, cand_img, cons, f_name):
     return c_kmeans, labels
 
 
-def execute(f_name, query_img, k, img_classSet, img_dataset, n_imgs):
+def gen_feats(f_name, query_img, k, img_classSet, img_dataset, n_imgs):
     '''Generate and Print Constrainted Cluster\n
        Parameters
            f_name: cluster name
@@ -126,69 +125,7 @@ def execute(f_name, query_img, k, img_classSet, img_dataset, n_imgs):
         f_name, k, features, query_feature, img_dataset, n_imgs)
     print("Candidate Selection time: %0.3fs" % (time() - t0))
 
-    '''----------- Constraint Creation ---------------'''
-    t0 = time()
-    cand_img, cons = gen_cons.generate_constraints(
-        cand_img, cand_features, img_classSet)
-    print("Constraint Creation time: %0.3fs" % (time() - t0))
-
-    return cand_img, cons
-
-
-def pairwise_distance(f_name, img_feats, query_feats):
-    if f_name == "BOVW":
-        diq = np.sqrt(np.sum((img_feats - query_feats) ** 2))
-    elif f_name == "MPEG7":
-        diq = np.sqrt(np.sum((img_feats[0] - query_feats[0]) ** 2)) + np.sqrt(
-            np.sum((img_feats[1] - query_feats[1]) ** 2)) + np.sqrt(
-            np.sum((img_feats[2] - query_feats[2]) ** 2))
-    elif f_name == "SIFT":
-        bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
-        matches = bf.match(img_feats, query_feats)
-        matches = sorted(matches, key=lambda x: x.distance)
-        matches = len(matches)
-        diq = matches
-
-    return diq
-
-
-def silhouette_score(f_name, data_points, labels, k):
-    num = len(labels)
-    dist_matrix = []
-    silh_points = []
-
-    for i in range(num):
-        temp = []
-        for j in range(num):
-            temp.append(pairwise_distance(f_name, data_points[i], data_points[j]))
-        dist_matrix.append(temp)
-
-    for i in range(num):
-        clu = labels[i]
-        same = 0.0
-        diff = 0.0
-        for j in range(num):
-            if labels[j] == clu:
-                same += dist_matrix[i][j]
-            else:
-                diff += dist_matrix[i][j]
-
-        same_count = labels.count(labels[i])
-        a = same / same_count
-        b = diff / (num - same_count)
-        silh_points.append((b - a) / max(b, a))
-
-    final_score = 0.0
-    for i in range(k):
-        temp = 0.0
-        for j in range(num):
-            if i == labels[j]:
-                temp += silh_points[j]
-
-        temp /= labels.count(i)
-        final_score += temp
-
-    return final_score/k
+    return cand_img, cand_features
 
 
 def main():
@@ -199,7 +136,7 @@ def main():
     query = args.query
     path_query = os.getcwd() + img_folder_path + query + '.jpg'
     query_img = cv2.imread(path_query)
-    f_name = "MPEG7"
+    f_name = "SIFT"
 
     '''----------- Creating Data Set ------------------'''
     image_classSet = dataset.extract_imageDescrip(
@@ -208,15 +145,22 @@ def main():
     print("Data Set Creation time: %0.3fs" % (time() - t0))
 
     '''Extract image features, candidates using knn & create constraints for given feature name'''
-    cand_img, cons = execute(f_name, query_img, k, image_classSet, image_dataset, n_imgs)
+    cand_img, cand_features = gen_feats(
+        f_name, query_img, k, image_classSet, image_dataset, n_imgs)
+
+    '''----------- Constraint Creation ---------------'''
+    t0 = time()
+    cand_img, cons = gen_cons.generate_constraints(
+        cand_img, cand_features, image_classSet)
+    print("Constraint Creation time: %0.3fs" % (time() - t0))
 
     '''Generate Clusters'''
     copk_clus, copk_labels = gen_clus("COP", cand_img, cons, f_name)
     pck_clus, pck_labels = gen_clus("PC", cand_img, cons, f_name)
 
     '''Evaluate Clustering'''
-    print(f'COPKMeans Silhouette Score(n={k}): {silhouette_score(f_name, cons.x, copk_labels, len(cons.descripList))}')
-    print(f'PCKMeans Silhouette Score(n={k}): {silhouette_score(f_name, cons.x, pck_labels, len(cons.descripList))}')
+    print(f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, copk_labels, len(cons.descripList))}')
+    print(f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, pck_labels, len(cons.descripList))}')
 
 
 if __name__ == "__main__":
