@@ -46,6 +46,14 @@ def my_davies_bouldin_score(fname, dataset, labels):
     else:
         return metrics.davies_bouldin_score(dataset, labels)
 
+def my_silhouette_score(fname, dataset, labels):
+    if (fname == "MPEG7"):
+        dataset = np.array(dataset)
+        dataset = dataset.reshape(dataset.shape[0], (dataset.shape[1]*dataset.shape[2]))
+        return metrics.davies_bouldin_score(dataset, labels)
+    else:
+        return metrics.silhouette_score(dataset, labels, metric='euclidean')
+
 def silhouette_score(f_name, data_points, labels, k):
     num = len(labels)
     dist_matrix = []
