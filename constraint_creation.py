@@ -1,5 +1,7 @@
 import random
 from Dataset import ImageDescrip
+import candidate_selection as cand_selec
+import numpy as np
 # ------------------------- Constraints Creation ----------------------------
 
 
@@ -68,8 +70,50 @@ def process_img_descrip(imgList, descripList):
 
     return descripSet, neighborhoods, y_labels
 
+def gen_new_cons(imgList, f_name, feature_set, n_imgs, descripList):
+    neighborhoods = []
+    dist_matrix = []
+    isTraversed = []
+    k = len(descripList)
+    # neighborhoods.append([x])
+    # isTraversed.append(x)
+    for img in imgList:
+        dists = cand_selec.dist(f_name, feature_set, img.feature, n_imgs)
+        dist_matrix.append(dists)
+    index_arr = range(n_imgs)
+    while len(neighborhoods) < k:
+        k_cbir = []
+        traverse = True
+        neighb = []
+        if len(isTraversed) == 0:
+            x = random.choice(index_arr)
+        else:
+            while(traverse):
+                flag = True
+                x = random.choice(index_arr)
+                for i in isTraversed:
+                    if i == x:
+                        flag = False
+                        break
+                if flag:
+                    traverse = False
 
-def generate_constraints(imgList, x, image_classSet):
+        if f_name == "SIFT":
+            k_cbir = np.argsort(dist_matrix[x])[::-1][:3]
+        else:
+            k_cbir = np.argsort(dist_matrix[x])[:3]
+        for i in k_cbir:
+          isTraversed.append(i)
+          neighb.append(i)
+        for dist in dist_matrix:
+            for i in isTraversed:
+                dist[i] = 9999
+        neighborhoods.append(neighb)
+
+    return neighborhoods
+
+
+def generate_constraints(imgList, x, image_classSet, f_name):
     '''Generates constraints and prepares the Constraints class\n
        Parameters
            imgList: image dataset array
@@ -79,21 +123,36 @@ def generate_constraints(imgList, x, image_classSet):
     must_link = []
     cannot_link = []
     descripList = generate_img_descrip(imgList, image_classSet)
-    candidate_descripSet, neighborhoods, y_labels = process_img_descrip(
+    neighborhoods = gen_new_cons(
+        imgList, f_name, x, len(imgList), descripList)
+    candidate_descripSet, old_neighborhoods, y_labels = process_img_descrip(
         imgList, descripList)
-
-    for set in candidate_descripSet:
-        for i in set.imgList:
-            for j in set.imgList:
+    
+    for set in neighborhoods:
+        for i in set:
+            for j in set:
                 if i != j:
                     must_link.append((i, j))
 
-    for set1 in candidate_descripSet:
-        for set2 in candidate_descripSet:
-            if set1.imgList != set2.imgList:
-                for i in set1.imgList:
-                    for j in set2.imgList:
+    for set1 in neighborhoods:
+        for set2 in neighborhoods:
+            if set1 != set2:
+                for i in set1:
+                    for j in set2:
                         cannot_link.append((i, j))
+
+    # for set in candidate_descripSet:
+    #     for i in set.imgList:
+    #         for j in set.imgList:
+    #             if i != j:
+    #                 must_link.append((i, j))
+
+    # for set1 in candidate_descripSet:
+    #     for set2 in candidate_descripSet:
+    #         if set1.imgList != set2.imgList:
+    #             for i in set1.imgList:
+    #                 for j in set2.imgList:
+    #                     cannot_link.append((i, j))
 
     ml_graph, cl_graph = transitive_entailment_graph(
         must_link, cannot_link, len(imgList))

@@ -108,15 +108,16 @@ def extract_imageDescrip(img_class_set_names, img_class_path):
                     row[0] = '000005'
                 entry.append(row[0])
 
-        if descrip["type"] not in classSet:
-            classSet.append(descrip["type"])
-        temp_img_classSet.append(ImageDescrip(descrip["type"], entry))
+        image_classSet.append(ImageDescrip(descrip["name"], set((entry))))
+    #     if descrip["type"] not in classSet:
+    #         classSet.append(descrip["type"])
+    #     temp_img_classSet.append(ImageDescrip(descrip["type"], entry))
 
-    for classType in classSet:
-        entry = set()
-        for imgdescrip in temp_img_classSet:
-            if classType == imgdescrip.descrip:
-                entry.update(imgdescrip.imgList)
-        image_classSet.append(ImageDescrip(classType, set((entry))))
+    # for classType in classSet:
+    #     entry = set()
+    #     for imgdescrip in temp_img_classSet:
+    #         if classType == imgdescrip.descrip:
+    #             entry.update(imgdescrip.imgList)
+    #     image_classSet.append(ImageDescrip(classType, set((entry))))
 
     return image_classSet

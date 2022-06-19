@@ -137,7 +137,7 @@ def main():
     query = args.query
     path_query = os.getcwd() + img_folder_path + query + '.jpg'
     query_img = cv2.imread(path_query)
-    f_name = "MPEG7"
+    f_name = "BOVW"
 
     '''----------- Creating Data Set ------------------'''
     image_classSet = dataset.extract_imageDescrip(
@@ -152,7 +152,7 @@ def main():
     '''----------- Constraint Creation ---------------'''
     t0 = time()
     cand_img, cons = gen_cons.generate_constraints(
-        cand_img, cand_features, image_classSet)
+        cand_img, cand_features, image_classSet, f_name)
     print("Constraint Creation time: %0.3fs" % (time() - t0))
 
     '''Generate Clusters'''
