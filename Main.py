@@ -20,13 +20,13 @@ import numpy as np
 # Initialize parser
 parser = argparse.ArgumentParser()
 # Adding arguments
-parser.add_argument("--k", required=True)
+#parser.add_argument("--k", required=True)
 parser.add_argument("--query", required=True)
 # ---------------------------------
 
 # -------------- Parameter Declaration -------------------
-img_folder_path = '\\VOCtrainval_06-Nov-2007\\VOCdevkit\\VOC2007\\JPEGImages\\'
-img_class_path = '\\VOCtrainval_06-Nov-2007\\VOCdevkit\\VOC2007\\ImageSets\\Main\\processed_files\\'
+img_folder_path = '/VOCtrainval_06-Nov-2007/VOCdevkit/VOC2007/JPEGImages/'
+img_class_path = '/VOCtrainval_06-Nov-2007/VOCdevkit/VOC2007/ImageSets/Main/processed_files/'
 img_class_set_names = [{'name': 'aeroplane', 'type': 'vehicle'},
                        {'name': 'bicycle', 'type': 'vehicle'},
                        {'name': 'bird', 'type': 'animal'},
@@ -88,7 +88,7 @@ def gen_clus(c_name, cand_img, cons, f_name):
     return c_kmeans, labels
 
 
-def gen_feats(f_name, query_img, k, img_classSet, img_dataset, n_imgs):
+def gen_feats(f_name, query_img, img_dataset, n_imgs):
     '''Generate and Print Constrainted Cluster\n
        Parameters
            f_name: cluster name
@@ -120,20 +120,16 @@ def gen_feats(f_name, query_img, k, img_classSet, img_dataset, n_imgs):
         query_feature = mpeg7.get_mpeg7_features(query_img)
         print("MPEG7 features Creation time: %0.3fs" % (time() - t0))
 
-    '''----------- Candidate Selection ---------------'''
-    t0 = time()
-    cand_img, cand_features = cand_selec.select_candidates(
-        f_name, k, features, query_feature, img_dataset, n_imgs)
-    print("Candidate Selection time: %0.3fs" % (time() - t0))
-
-    return cand_img, cand_features
+    return features, query_feature
 
 
 def main():
-    t0 = time()
-    # Read arguments from command line
     args = parser.parse_args()
-    k = int(args.k)
+    cand = []
+    Calinski_Score_copk = []
+    Calinski_Score_pck = []
+    t0 = time()
+    # Read arguments from command linecand.append(i)
     query = args.query
     path_query = os.getcwd() + img_folder_path + query + '.jpg'
     query_img = cv2.imread(path_query)
@@ -141,35 +137,53 @@ def main():
 
     '''----------- Creating Data Set ------------------'''
     image_classSet = dataset.extract_imageDescrip(
-        img_class_set_names, img_class_path)
-    image_dataset, n_imgs = dataset.create_dataset(img_folder_path)
+    img_class_set_names, img_class_path)
+    image_dataset, n_imgs = dataset.create_dataset(img_folder_path)    
     print("Data Set Creation time: %0.3fs" % (time() - t0))
-
     '''Extract image features, candidates using knn & create constraints for given feature name'''
-    cand_img, cand_features = gen_feats(
-        f_name, query_img, k, image_classSet, image_dataset, n_imgs)
+    features, query_feature = gen_feats(
+        f_name, query_img, image_dataset, n_imgs)
 
-    '''----------- Constraint Creation ---------------'''
-    t0 = time()
-    cand_img, cons = gen_cons.generate_constraints(
-        cand_img, cand_features, image_classSet, f_name)
-    print("Constraint Creation time: %0.3fs" % (time() - t0))
+    for i in range(50,1001,50):
+        cand.append(i)
+        k = i
+        '''----------- Candidate Selection ---------------'''
+        t0 = time()
+        cand_img, cand_features = cand_selec.select_candidates(
+        f_name, k, features, query_feature, image_dataset, n_imgs)
+        print("Candidate Selection time: %0.3fs" % (time() - t0))
 
-    '''Generate Clusters'''
-    copk_clus, copk_labels = gen_clus("COP", cand_img, cons, f_name)
-    pck_clus, pck_labels = gen_clus("PC", cand_img, cons, f_name)
+        '''----------- Constraint Creation ---------------'''
+        t0 = time()
+        cand_img, cons = gen_cons.generate_constraints(
+            cand_img, cand_features, image_classSet, f_name)
+        print("Constraint Creation time: %0.3fs" % (time() - t0))
 
-    '''Evaluate Clustering'''
+        '''Generate Clusters'''
+        copk_clus, copk_labels = gen_clus("COP", cand_img, cons, f_name)
+        pck_clus, pck_labels = gen_clus("PC", cand_img, cons, f_name)
+        
+        '''Evaluate Clustering'''
+        copk_Calinski = clus_eval.my_calinski_harabasz_score(f_name, cons.x, copk_labels)
+        pck_Calinski = clus_eval.my_calinski_harabasz_score(f_name, cons.x, pck_labels)
+        
+        print(f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, copk_labels, len(cons.descripList))}')
+        print(f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, pck_labels, len(cons.descripList))}')
 
-    print(f'COPKMeans CHIndex Score(n={k}): {clus_eval.my_calinski_harabasz_score(f_name,cons.x, copk_labels)}')
-    print(f'PCKMeans CHIndex Score(n={k}): {clus_eval.my_calinski_harabasz_score(f_name, cons.x, pck_labels)}')
+        print(f'COPKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, copk_labels)}')
+        print(f'PCKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, pck_labels)}') 
 
-
-    print(f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, copk_labels, len(cons.descripList))}')
-    print(f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, pck_labels, len(cons.descripList))}')
-
-    print(f'COPKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, copk_labels)}')
-    print(f'PCKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, pck_labels)}') 
+        print(f'COPKMeans Calinski Harabasz Score(n={k}): {clus_eval.my_calinski_harabasz_score(f_name, cons.x, copk_labels)}')
+        print(f'PCKMeans SCalinski Harabasz Score(n={k}): {clus_eval.my_calinski_harabasz_score(f_name, cons.x, pck_labels)}')
+        
+        Calinski_Score_copk.append(copk_Calinski)
+        Calinski_Score_pck.append(pck_Calinski)
+    
+    fig, axs = plt.subplots(2)
+    fig.suptitle('MPEG7 Calinski Harabasz Score for COPK and PCK means')
+    axs[0].plot(cand, Calinski_Score_copk)
+    axs[1].plot(cand, Calinski_Score_pck)
+    plt.show()
 
 if __name__ == "__main__":
     main()
