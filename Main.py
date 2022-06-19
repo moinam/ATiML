@@ -185,6 +185,11 @@ def main():
     print(f'COPKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, copk_labels)}')
     print(f'PCKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, pck_labels)}') 
 
+    print(f'COPKMeans Jaccard Score(n={k}): {clus_eval.my_jaccard_score(cons.x, copk_labels)}')
+    print(f'PCKMeans Jaccard Score(n={k}): {clus_eval.my_jaccard_score(cons.x, pck_labels)}')
+
+
+
       
 
 
