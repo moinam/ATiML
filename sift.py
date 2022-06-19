@@ -1,25 +1,20 @@
 import cv2
-#--------------------SIFT---------------
 
-
-def execute_sift(image_dataset):
+# --------------------SIFT---------------
+def execute_sift(image_dataset, num_keypoints):
     '''Creates Speeded-Up Robust Features\n
        Parameters
            dataset: image dataset array
+           num_keypoints: number of keypoints to detect.
     '''
-    sift = cv2.SIFT_create()
+    sift = cv2.SIFT_create(num_keypoints)
     keypoints = []
     descriptors = []
-    min = 999999
     for img in image_dataset:
         keypoints_ind, descriptors_ind = sift.detectAndCompute(
             cv2.cvtColor(img.img, cv2.COLOR_BGR2GRAY), None)
         keypoints.append(keypoints_ind)
         descriptors.append(descriptors_ind)
-        if(min > len(descriptors_ind)):
-            min = len(descriptors_ind)
-    for descrip in descriptors:
-        descrip = descrip[:min]
     return keypoints, descriptors
 
 

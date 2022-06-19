@@ -1,3 +1,4 @@
+# %%
 import cv2
 import os
 import argparse
@@ -14,7 +15,6 @@ import sift as SIFT
 import PC_Kmeans as PCK
 import COP_Kmeans as COPK
 import cluster_evaluation as clus_eval
-import numpy as np
 
 # --------Acepting Input----------
 # Initialize parser
@@ -25,8 +25,8 @@ parser.add_argument("--query", required=True)
 # ---------------------------------
 
 # -------------- Parameter Declaration -------------------
-img_folder_path = '\\VOCtrainval_06-Nov-2007\\VOCdevkit\\VOC2007\\JPEGImages\\'
-img_class_path = '\\VOCtrainval_06-Nov-2007\\VOCdevkit\\VOC2007\\ImageSets\\Main\\processed_files\\'
+img_folder_path = '/VOCtrainval_06-Nov-2007/VOCdevkit/VOC2007/JPEGImages/'
+img_class_path = '/VOCtrainval_06-Nov-2007/VOCdevkit/VOC2007/ImageSets/Main/processed_files/'
 img_class_set_names = [{'name': 'aeroplane', 'type': 'vehicle'},
                        {'name': 'bicycle', 'type': 'vehicle'},
                        {'name': 'bird', 'type': 'animal'},
@@ -54,6 +54,7 @@ n_patches = 250
 random_state = 1
 n_dic = 50  # size of the dictionary
 
+# %%
 def gen_clus(c_name, cand_img, cons, f_name):
     '''Generate and Print Constrainted Cluster\n
        Parameters
@@ -128,62 +129,91 @@ def gen_feats(f_name, query_img, k, img_classSet, img_dataset, n_imgs):
 
     return cand_img, cand_features
 
+# %%
+t0 = time()
+# Read arguments from command line
+args = parser.parse_args(["--k", "50", "--query", "000036"])
+k = int(args.k)
+query = args.query
+path_query = os.getcwd() + img_folder_path + query + '.jpg'
+query_img = cv2.imread(path_query)
 
-def main():
-    t0 = time()
-    # Read arguments from command line
-    args = parser.parse_args()
-    k = int(args.k)
-    query = args.query
-    path_query = os.getcwd() + img_folder_path + query + '.jpg'
-    query_img = cv2.imread(path_query)
-    f_name = "BOVW"
-
-    '''----------- Creating Data Set ------------------'''
-    image_classSet = dataset.extract_imageDescrip(
-        img_class_set_names, img_class_path)
-    image_dataset, n_imgs = dataset.create_dataset(img_folder_path)
-    print("Data Set Creation time: %0.3fs" % (time() - t0))
-
-    '''Extract image features, candidates using knn & create constraints for given feature name'''
-    cand_img, cand_features = gen_feats(
-        f_name, query_img, k, image_classSet, image_dataset, n_imgs)
-
-    '''----------- Constraint Creation ---------------'''
-    t0 = time()
-    cand_img, cons = gen_cons.generate_constraints(
-        cand_img, cand_features, image_classSet, f_name)
-    print("Constraint Creation time: %0.3fs" % (time() - t0))
-
-    '''Generate Clusters'''
-    copk_clus, copk_labels = gen_clus("COP", cand_img, cons, f_name)
-    pck_clus, pck_labels = gen_clus("PC", cand_img, cons, f_name)
-
-    '''Evaluate Clustering'''
-    print(f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, copk_labels, len(cons.descripList))}')
-    print(f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, pck_labels, len(cons.descripList))}')
-    
-    print(f'COPKMeans Davies Bouldin Score(n={k}): {clus_eval.my_davies_bouldin_score(f_name, cons.x, copk_labels)}')
-    print(f'PCKMeans Davies Bouldin Score(n={k}): {clus_eval.my_davies_bouldin_score(f_name, cons.x, pck_labels)}')
-
-    print(f'COPKMeans Rand Score(n={k}): {clus_eval.my_rand_score(cons.y, copk_labels)}')
-    print(f'PCKMeans Rand Score(n={k}): {clus_eval.my_rand_score(cons.y, pck_labels)}')
-
-    print(f'COPKMeans Normalized Mutual Information Score(n={k}): {clus_eval.my_nmi(cons.y, copk_labels)}')
-    print(f'PCKMeans Normalized Mutual Information Score(n={k}): {clus_eval.my_nmi(cons.y, pck_labels)}')
-
-    print(f'COPKMeans Homogenity Score(n={k}): {clus_eval.my_homogeneity_score(cons.y, copk_labels)}')
-    print(f'PCKMeans Homogenity Score(n={k}): {clus_eval.my_homogeneity_score(cons.y, pck_labels)}')
-    
-    print(f'COPKMeans Completeness Score(n={k}): {clus_eval.my_completeness_score(cons.y, copk_labels)}')
-    print(f'PCKMeans Completeness Score(n={k}): {clus_eval.my_completeness_score(cons.y, pck_labels)}')
-
-    print(f'COPKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, copk_labels)}')
-    print(f'PCKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, pck_labels)}') 
-
-      
+'''----------- Creating Data Set ------------------'''
+image_classSet = dataset.extract_imageDescrip(
+    img_class_set_names, img_class_path)
+image_dataset, n_imgs = dataset.create_dataset(img_folder_path)
+print("Data Set Creation time: %0.3fs" % (time() - t0))
 
 
+# %%
+'''Extract image features, candidates using knn & create constraints for given feature name'''
+cand_img_mpeg7, cand_features_mpeg7 = gen_feats("MPEG7", query_img, k,
+                                     image_classSet, image_dataset, n_imgs)
+cand_img_bovw, cand_features_bovw = gen_feats("BOVW", query_img, k,
+                                   image_classSet, image_dataset, n_imgs)
 
-if __name__ == "__main__":
-    main()
+
+# %%
+'''Extract image features, candidates using knn & create constraints for given feature name'''
+cand_img_sift, cand_features_sift = gen_feats("SIFT", query_img, k,
+                         image_classSet, image_dataset, n_imgs)
+
+
+# %%
+'''----------- Constraint Creation ---------------'''
+t0 = time()
+cand_img_mpeg7, cons_mpeg7 = gen_cons.generate_constraints(
+    cand_img_mpeg7, cand_features_mpeg7, image_classSet)
+cand_img_bovw, cons_bovw = gen_cons.generate_constraints(
+    cand_img_bovw, cand_features_bovw, image_classSet)
+cand_img_sift, cons_sift = gen_cons.generate_constraints(
+    cand_img_sift, cand_features_bovw, image_classSet)
+print("Constraint Creation time: %0.3fs" % (time() - t0))
+
+
+# %%
+'''Generate Clusters'''
+mpeg7_copk_clus, mpeg7_copk_labels = gen_clus(
+    "COP", cand_img_mpeg7, cons_mpeg7, "MPEG7")
+mpeg7_pck_clus, mpeg7_pck_labels = gen_clus(
+    "PC", cand_img_mpeg7, cons_mpeg7, "MPEG7")
+
+'''Evaluate Clustering'''
+print(
+    f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("MPEG7", cons_mpeg7.x, mpeg7_copk_labels, len(cons_mpeg7.descripList))}')
+print(
+    f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("MPEG7", cons_mpeg7.x, mpeg7_pck_labels, len(cons_mpeg7.descripList))}')
+
+
+# %%
+'''Generate Clusters'''
+bovw_copk_clus, bovw_copk_labels = gen_clus(
+    "COP", cand_img_bovw, cons_bovw, "BOVW")
+bovw_copk_clus, bovw_pck_labels = gen_clus(
+    "PC", cand_img_bovw, cons_bovw, "BOVW")
+
+'''Evaluate Clustering'''
+print(
+    f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("BOVW", cons_bovw.x, bovw_copk_labels, len(cons_bovw.descripList))}')
+print(
+    f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("BOVW", cons_bovw.x, bovw_pck_labels, len(cons_bovw.descripList))}')
+
+
+# %%
+'''Generate Clusters'''
+sift_copk_clus, sift_copk_labels = gen_clus(
+    "COP", cand_img_sift, cons_sift, "SIFT")
+sift_pck_clus, sift_pck_labels = gen_clus(
+    "PC", cand_img_sift, cons_sift, "SIFT")
+
+'''Evaluate Clustering'''
+print(
+    f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("SIFT", cons_sift.x, sift_copk_labels, len(cons_sift.descripList))}')
+print(
+    f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("SIFT", cons_sift.x, sift_pck_labels, len(cons_sift.descripList))}')
+
+
+# %%
+
+
+

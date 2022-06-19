@@ -1,10 +1,11 @@
+import cv2
 import random
 import numpy as np
-import cv2
+np.seterr(divide='ignore', invalid='ignore')
 
 
 class COP_KMeans:
-    def __init__(self, k, ml, cl, f_name, tolerance=0.00001, max_iterations=300):
+    def __init__(self, k, ml, cl, f_name, tolerance=0.00001, max_iterations=3):
         self.k = k
         self.ml = ml
         self.cl = cl
@@ -31,9 +32,17 @@ class COP_KMeans:
 
             # find the distance between the point and cluster; choose the nearest centroid
             for x_index in range(len(data)):
-                distances = {center_index: np.linalg.norm(data[x_index] - self.centroids[center_index]) for center_index
-                             in self.centroids}
-                sorted_distances = sorted(distances.items(), key=lambda kv: kv[1])
+                if self.f_name == "SIFT":
+                    bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
+                    distances = {center_index: len(sorted(bf.match(
+                        data[x_index], self.centroids[center_index]), key=lambda x: x.distance))for center_index in self.centroids}
+                    sorted_distances = sorted(
+                        distances.items(), key=lambda kv: kv[1], reverse=True)
+                else:
+                    distances = {center_index: np.linalg.norm(
+                        data[x_index] - self.centroids[center_index])for center_index in self.centroids}
+                    sorted_distances = sorted(
+                        distances.items(), key=lambda kv: kv[1])
                 empty_flag = True
 
                 for center_index, dis_value in sorted_distances:  # ??????
@@ -69,7 +78,9 @@ class COP_KMeans:
             for centroid in self.centroids:
                 original_centroid = previous[centroid]
                 curr = self.centroids[centroid]
-                if np.sum((curr - original_centroid) / original_centroid * 100.0) > self.tolerance:
+                sum = np.sum((curr - original_centroid) /
+                             original_centroid * 100.0)
+                if sum > self.tolerance:
                     isOptimal = False
 
             if isOptimal:
