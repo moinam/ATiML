@@ -160,6 +160,10 @@ def main():
     pck_clus, pck_labels = gen_clus("PC", cand_img, cons, f_name)
 
     '''Evaluate Clustering'''
+
+    print(f'COPKMeans CHIndex Score(n={k}): {clus_eval.my_calinski_harabasz_score(f_name,cons.x, copk_labels)}')
+    print(f'PCKMeans CHIndex Score(n={k}): {clus_eval.my_calinski_harabasz_score(f_name, cons.x, pck_labels)}')
+
     if (f_name == "MPEG7"):
         print(f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, copk_labels, len(cons.descripList))}')
         print(f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, pck_labels, len(cons.descripList))}')
@@ -167,32 +171,8 @@ def main():
         print(f'COPKMeans Silhouette Score(n={k}): {clus_eval.my_silhouette_score(f_name, cons.x, copk_labels)}')
         print(f'PCKMeans Silhouette Score(n={k}): {clus_eval.my_silhouette_score(f_name, cons.x, pck_labels)}')
     
-    print(f'COPKMeans Davies Bouldin Score(n={k}): {clus_eval.my_davies_bouldin_score(f_name, cons.x, copk_labels)}')
-    print(f'PCKMeans Davies Bouldin Score(n={k}): {clus_eval.my_davies_bouldin_score(f_name, cons.x, pck_labels)}')
-
-    print(f'COPKMeans Rand Score(n={k}): {clus_eval.my_rand_score(cons.y, copk_labels)}')
-    print(f'PCKMeans Rand Score(n={k}): {clus_eval.my_rand_score(cons.y, pck_labels)}')
-
-    print(f'COPKMeans Normalized Mutual Information Score(n={k}): {clus_eval.my_nmi(cons.y, copk_labels)}')
-    print(f'PCKMeans Normalized Mutual Information Score(n={k}): {clus_eval.my_nmi(cons.y, pck_labels)}')
-
-    print(f'COPKMeans Homogenity Score(n={k}): {clus_eval.my_homogeneity_score(cons.y, copk_labels)}')
-    print(f'PCKMeans Homogenity Score(n={k}): {clus_eval.my_homogeneity_score(cons.y, pck_labels)}')
-    
-    print(f'COPKMeans Completeness Score(n={k}): {clus_eval.my_completeness_score(cons.y, copk_labels)}')
-    print(f'PCKMeans Completeness Score(n={k}): {clus_eval.my_completeness_score(cons.y, pck_labels)}')
-
     print(f'COPKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, copk_labels)}')
     print(f'PCKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, pck_labels)}') 
-
-    print(f'COPKMeans Jaccard Score(n={k}): {clus_eval.my_jaccard_score(cons.x, copk_labels)}')
-    print(f'PCKMeans Jaccard Score(n={k}): {clus_eval.my_jaccard_score(cons.x, pck_labels)}')
-
-
-
-      
-
-
 
 if __name__ == "__main__":
     main()
