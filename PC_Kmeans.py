@@ -1,13 +1,16 @@
 import numpy as np
+import cv2
 
 
 class PC_Kmeans:
-    def __init__(self, k, ml, cl, neighborhoods, y, w=1, tolerance=0.00001, max_iterations=300):
+    def __init__(self, k, ml, cl, neighborhoods, y, num, f_name, w=1, tolerance=0.00001, max_iterations=300):
         self.k = k
         self.ml = ml  # is transitive graph
         self.cl = cl  # is graph
         self.neighborhoods = neighborhoods
         self.y = y
+        self.num = num
+        self.f_name = f_name
         self.w = w
         self.tolerance = tolerance
         self.max_iterations = max_iterations
@@ -28,7 +31,8 @@ class PC_Kmeans:
                 self.clusters[i] = set()
 
             # Assign clusters
-            alter = self.assign_clusters(data, cluster_centers, self.ml, self.cl, self.w)
+            alter = self.assign_clusters(
+                data, cluster_centers, self.ml, self.cl, self.w)
 
             if alter == "empty":
                 return "Cluster Not Found"
@@ -68,8 +72,14 @@ class PC_Kmeans:
             return "empty"
 
     def objective_function(self, data, x_index, centroids, cluster_index, is_clustered, ml, cl, w):
-
-        distance = 1 / 2 * np.sum((data[x_index] - centroids[cluster_index]) ** 2)
+        if self.f_name == "SIFT":
+            bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
+            matches = bf.match(data[x_index], centroids[cluster_index])
+            matches = len(sorted(matches, key=lambda x: x.distance))
+            distance = 1 - (matches / self.num)
+        else:
+            distance = 1 / 2 * \
+                np.sum((data[x_index] - centroids[cluster_index]) ** 2)
 
         ml_penalty = 0
         for i in ml[x_index]:
@@ -85,8 +95,10 @@ class PC_Kmeans:
 
     def init_centers(self, data, neighborhoods, y):
         data = np.array(data)
-        neighborhoods = sorted(neighborhoods, key=len, reverse=True)  # srot neighborhoods base on size
-        neighborhood_centers = np.array([data[neighborhood].mean(axis=0) for neighborhood in neighborhoods])
+        # srot neighborhoods base on size
+        neighborhoods = sorted(neighborhoods, key=len, reverse=True)
+        neighborhood_centers = np.array(
+            [data[neighborhood].mean(axis=0) for neighborhood in neighborhoods])
         # neighborhood_sizes = np.array([len(neighborhood) for neighborhood in neighborhoods])
 
         if len(neighborhoods) > self.k:
@@ -112,8 +124,9 @@ class PC_Kmeans:
 
             if len(neighborhoods) < self.k:
                 remaining_cluster_centers = data[
-                                            np.random.choice(len(data), self.k - len(neighborhoods), replace=False), :]
-                cluster_centers = np.concatenate([cluster_centers, remaining_cluster_centers])
+                    np.random.choice(len(data), self.k - len(neighborhoods), replace=False), :]
+                cluster_centers = np.concatenate(
+                    [cluster_centers, remaining_cluster_centers])
 
         return cluster_centers
 

@@ -70,7 +70,7 @@ def gen_clus(c_name, cand_img, cons, f_name):
     else:
         '''---------------- PC-Kmeans ---------------'''
         c_kmeans = PCK.PC_Kmeans(len(cons.descripList), cons.ml_g, cons.cl_g,
-                                 cons.neighborhoods, cons.y)
+                                 cons.neighborhoods, cons.y, len(cand_img[0].feature), f_name)
 
     c_kmeans.fit(cons.x)
     labels = c_kmeans.predict(cons.x)
@@ -149,8 +149,8 @@ print("Data Set Creation time: %0.3fs" % (time() - t0))
 '''Extract image features, candidates using knn & create constraints for given feature name'''
 cand_img_mpeg7, cand_features_mpeg7 = gen_feats("MPEG7", query_img, k,
                                      image_classSet, image_dataset, n_imgs)
-cand_img_bovw, cand_features_bovw = gen_feats("BOVW", query_img, k,
-                                   image_classSet, image_dataset, n_imgs)
+# cand_img_bovw, cand_features_bovw = gen_feats("BOVW", query_img, k,
+#                                    image_classSet, image_dataset, n_imgs)
 
 
 # %%
@@ -162,12 +162,12 @@ cand_img_sift, cand_features_sift = gen_feats("SIFT", query_img, k,
 # %%
 '''----------- Constraint Creation ---------------'''
 t0 = time()
-cand_img_mpeg7, cons_mpeg7 = gen_cons.generate_constraints(
-    cand_img_mpeg7, cand_features_mpeg7, image_classSet)
-cand_img_bovw, cons_bovw = gen_cons.generate_constraints(
-    cand_img_bovw, cand_features_bovw, image_classSet)
+# cand_img_mpeg7, cons_mpeg7 = gen_cons.generate_constraints(
+#     cand_img_mpeg7, cand_features_mpeg7, image_classSet, "MPEG7")
+# cand_img_bovw, cons_bovw = gen_cons.generate_constraints(
+#     cand_img_bovw, cand_features_bovw, image_classSet, "BOVW")
 cand_img_sift, cons_sift = gen_cons.generate_constraints(
-    cand_img_sift, cand_features_bovw, image_classSet)
+    cand_img_sift, cand_features_sift, image_classSet, "SIFT")
 print("Constraint Creation time: %0.3fs" % (time() - t0))
 
 
@@ -208,12 +208,6 @@ sift_pck_clus, sift_pck_labels = gen_clus(
 
 '''Evaluate Clustering'''
 print(
-    f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("SIFT", cons_sift.x, sift_copk_labels, len(cons_sift.descripList))}')
+    f'COPKMeans Silhouette Score(n={k}): {clus_eval.my_silhouette_score("SIFT", cons_sift.x, sift_copk_labels)}')
 print(
-    f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("SIFT", cons_sift.x, sift_pck_labels, len(cons_sift.descripList))}')
-
-
-# %%
-
-
-
+    f'PCKMeans Silhouette Score(n={k}): {clus_eval.my_silhouette_score("SIFT", cons_sift.x, sift_pck_labels)}')

@@ -25,7 +25,7 @@ def my_v_measure_score(labels_true, labels_pred):
     return metrics.v_measure_score(labels_true, labels_pred)
 
 def my_calinski_harabasz_score(fname, dataset, labels):
-    if (fname == "MPEG7"):
+    if (fname == "MPEG7" or fname == "SIFT"):
         dataset = np.array(dataset)
         dataset = dataset.reshape(dataset.shape[0], (dataset.shape[1]*dataset.shape[2]))
         return metrics.calinski_harabasz_score(dataset, labels)

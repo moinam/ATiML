@@ -69,7 +69,7 @@ def gen_clus(c_name, cand_img, cons, f_name):
     else:
         '''---------------- PC-Kmeans ---------------'''
         c_kmeans = PCK.PC_Kmeans(len(cons.descripList), cons.ml_g, cons.cl_g,
-                                 cons.neighborhoods, cons.y)
+                                 cons.neighborhoods, cons.y, len(cand_img[0].feature), f_name)
 
     c_kmeans.fit(cons.x)
     labels = c_kmeans.predict(cons.x)
@@ -137,7 +137,7 @@ def main():
     query = args.query
     path_query = os.getcwd() + img_folder_path + query + '.jpg'
     query_img = cv2.imread(path_query)
-    f_name = "MPEG7"
+    f_name = "SIFT"
 
     '''----------- Creating Data Set ------------------'''
     image_classSet = dataset.extract_imageDescrip(
@@ -164,7 +164,7 @@ def main():
     print(f'COPKMeans CHIndex Score(n={k}): {clus_eval.my_calinski_harabasz_score(f_name,cons.x, copk_labels)}')
     print(f'PCKMeans CHIndex Score(n={k}): {clus_eval.my_calinski_harabasz_score(f_name, cons.x, pck_labels)}')
 
-    if (f_name == "MPEG7"):
+    if (f_name == "MPEG7" ):
         print(f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, copk_labels, len(cons.descripList))}')
         print(f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, pck_labels, len(cons.descripList))}')
     else:

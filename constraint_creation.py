@@ -1,4 +1,6 @@
 import random
+import cv2
+from matplotlib.ft2font import GLYPH_NAMES
 from Dataset import ImageDescrip
 import candidate_selection as cand_selec
 import numpy as np
@@ -82,7 +84,16 @@ def gen_new_cons(imgList, f_name, feature_set, n_imgs, descripList):
     # neighborhoods.append([x])
     # isTraversed.append(x)
     for img in imgList:
-        dists = cand_selec.dist(f_name, feature_set, img.feature, n_imgs)
+        if f_name == "SIFT":
+            bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
+            dists = []
+            for feat in feature_set:
+                matches = bf.match(feat, img.feature)
+                matches = len(sorted(matches, key=lambda x: x.distance))
+                dist = 1 - (matches / len(feature_set[0]))
+                dists.append(dist)
+        else:
+            dists = cand_selec.dist(f_name, feature_set, img.feature, n_imgs)
         dist_matrix.append(dists)
     index_arr = range(n_imgs)
     while len(neighborhoods) < k:
@@ -102,10 +113,7 @@ def gen_new_cons(imgList, f_name, feature_set, n_imgs, descripList):
                 if flag:
                     traverse = False
 
-        if f_name == "SIFT":
-            k_cbir = np.argsort(dist_matrix[x])[::-1][:3]
-        else:
-            k_cbir = np.argsort(dist_matrix[x])[:3]
+        k_cbir = np.argsort(dist_matrix[x])[:3]
         for i in k_cbir:
             isTraversed.append(i)
             neighb.append(i)
