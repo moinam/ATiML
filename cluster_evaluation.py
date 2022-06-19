@@ -18,36 +18,16 @@ def pairwise_distance(f_name, img_feats, query_feats):
 
     return diq
 
-# def silhouette_score(f_name, data_points, labels, k):
-#     res = metrics.silhouette_score(data_points, labels, metric='euclidean')
-#     return res
-
-
-def my_rand_score(true_labels, pred_labels):
-    return metrics.adjusted_rand_score(true_labels, pred_labels)
-
-def my_nmi(true_labels, pred_labels):
-    return metrics.normalized_mutual_info_score(true_labels, pred_labels)
-
-def my_homogeneity_score(labels_true, labels_pred):
-    return metrics.homogeneity_score(labels_true, labels_pred)
-
-def my_completeness_score(labels_true, labels_pred):
-    return metrics.completeness_score(labels_true, labels_pred)
-
 def my_v_measure_score(labels_true, labels_pred):
     return metrics.v_measure_score(labels_true, labels_pred)
 
-def my_jaccard_score(labels_true, labels_pred):
-    return metrics.jaccard_score(labels_true, labels_pred)
-
-def my_davies_bouldin_score(fname, dataset, labels):
+def my_calinski_harabasz_score(fname, dataset, labels):
     if (fname == "MPEG7"):
         dataset = np.array(dataset)
         dataset = dataset.reshape(dataset.shape[0], (dataset.shape[1]*dataset.shape[2]))
-        return metrics.davies_bouldin_score(dataset, labels)
+        return metrics.calinski_harabasz_score(dataset, labels)
     else:
-        return metrics.davies_bouldin_score(dataset, labels)
+        return metrics.calinski_harabasz_score(dataset, labels)
 
 def my_silhouette_score(fname, dataset, labels):
     if (fname == "SIFT"):
