@@ -3,7 +3,7 @@ import cv2
 
 
 class PC_Kmeans:
-    def __init__(self, k, ml, cl, neighborhoods, y, num, f_name, w=1, tolerance=0.00001, max_iterations=300):
+    def __init__(self, k, ml, cl, neighborhoods, y, num, f_name, w=1, tolerance=0.00001, max_iterations=3):
         self.k = k
         self.ml = ml  # is transitive graph
         self.cl = cl  # is graph
