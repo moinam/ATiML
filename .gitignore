@@ -1,4 +1,5 @@
 
+__pycache__/
 VOCtrainval_06-Nov-2007/VOCdevkit/VOC2007/Annotations/000005.xml
 VOCtrainval_06-Nov-2007/VOCdevkit/VOC2007/Annotations/000007.xml
 VOCtrainval_06-Nov-2007/VOCdevkit/VOC2007/Annotations/000009.xml
