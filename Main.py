@@ -164,13 +164,10 @@ def main():
     print(f'COPKMeans CHIndex Score(n={k}): {clus_eval.my_calinski_harabasz_score(f_name,cons.x, copk_labels)}')
     print(f'PCKMeans CHIndex Score(n={k}): {clus_eval.my_calinski_harabasz_score(f_name, cons.x, pck_labels)}')
 
-    if (f_name == "MPEG7" ):
-        print(f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, copk_labels, len(cons.descripList))}')
-        print(f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, pck_labels, len(cons.descripList))}')
-    else:
-        print(f'COPKMeans Silhouette Score(n={k}): {clus_eval.my_silhouette_score(f_name, cons.x, copk_labels)}')
-        print(f'PCKMeans Silhouette Score(n={k}): {clus_eval.my_silhouette_score(f_name, cons.x, pck_labels)}')
-    
+
+    print(f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, copk_labels, len(cons.descripList))}')
+    print(f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, pck_labels, len(cons.descripList))}')
+
     print(f'COPKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, copk_labels)}')
     print(f'PCKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, pck_labels)}') 
 
