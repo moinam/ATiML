@@ -2,6 +2,8 @@ import random
 from Dataset import ImageDescrip
 import candidate_selection as cand_selec
 import numpy as np
+
+
 # ------------------------- Constraints Creation ----------------------------
 
 
@@ -17,7 +19,8 @@ class Constraints:
         self.y = y
 
     def __repr__(self):
-        return "Must Link Graph: % s, Cannot Link Graph: % s, Neighborhoods: %s" % (self.ml_g, self.cl_g, self.neighborhoods)
+        return "Must Link Graph: % s, Cannot Link Graph: % s, Neighborhoods: %s" % (
+        self.ml_g, self.cl_g, self.neighborhoods)
 
 
 def generate_img_descrip(imgList, image_classSet):
@@ -31,11 +34,11 @@ def generate_img_descrip(imgList, image_classSet):
         ImageList = []
         for cla_img in cla.imgList:
             for img in imgList:
-                if(img.filename != cla_img):
+                if (img.filename != cla_img):
                     continue
                 img.descripList.append(cla.descrip)
                 ImageList.append(img.filename)
-        if(len(ImageList) != 0):
+        if (len(ImageList) != 0):
             descripList.append(cla.descrip)
 
     return descripList
@@ -51,7 +54,7 @@ def process_img_descrip(imgList, descripList):
     neighborhoods = []
     y_labels = []
     for img in imgList:
-        if(len(img.descripList) > 1):
+        if (len(img.descripList) > 1):
             descrip = random.choice(img.descripList)
             img.descripList = []
             img.descripList.append(descrip)
@@ -61,14 +64,15 @@ def process_img_descrip(imgList, descripList):
     for descrip in descripList:
         ImageList = []
         for i in range(len(imgList)):
-            if(imgList[i].descripList[0] != descrip):
+            if (imgList[i].descripList[0] != descrip):
                 continue
             ImageList.append(i)
-        if(len(ImageList) != 0):
+        if (len(ImageList) != 0):
             descripSet.append(ImageDescrip(descrip, ImageList))
             neighborhoods.append(ImageList)
 
     return descripSet, neighborhoods, y_labels
+
 
 def gen_new_cons(imgList, f_name, feature_set, n_imgs, descripList):
     neighborhoods = []
@@ -88,7 +92,7 @@ def gen_new_cons(imgList, f_name, feature_set, n_imgs, descripList):
         if len(isTraversed) == 0:
             x = random.choice(index_arr)
         else:
-            while(traverse):
+            while (traverse):
                 flag = True
                 x = random.choice(index_arr)
                 for i in isTraversed:
@@ -103,8 +107,8 @@ def gen_new_cons(imgList, f_name, feature_set, n_imgs, descripList):
         else:
             k_cbir = np.argsort(dist_matrix[x])[:3]
         for i in k_cbir:
-          isTraversed.append(i)
-          neighb.append(i)
+            isTraversed.append(i)
+            neighb.append(i)
         for dist in dist_matrix:
             for i in isTraversed:
                 dist[i] = 9999
@@ -127,7 +131,7 @@ def generate_constraints(imgList, x, image_classSet, f_name):
         imgList, f_name, x, len(imgList), descripList)
     candidate_descripSet, old_neighborhoods, y_labels = process_img_descrip(
         imgList, descripList)
-    
+
     for set in neighborhoods:
         for i in set:
             for j in set:
