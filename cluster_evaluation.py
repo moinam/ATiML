@@ -45,24 +45,9 @@ def my_calinski_harabasz_score(fname, dataset, labels):
 #         return metrics.silhouette_score(dataset, labels, metric='euclidean')
 
 
-def silhouette_score(f_name, data_points, labels, k):
+def silhouette_score(f_name, data_points, labels, k, dist_matrix):
     num = len(labels)
-    dist_matrix = []
     silh_points = []
-
-    for i in range(num):
-        temp = []
-        for j in range(num):
-            if f_name == "SIFT":
-                bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
-                matches = bf.match(data_points[i], data_points[j])
-                matches = len(sorted(matches, key=lambda x: x.distance))
-                distance = 1 - (matches / len(data_points[0]))
-                temp.append(distance)
-            else:
-                temp.append(cand_selec.dist(
-                    f_name, [data_points[i]], data_points[j], 1)[0])
-        dist_matrix.append(temp)
 
     for i in range(num):
         clu = labels[i]

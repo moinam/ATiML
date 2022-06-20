@@ -20,13 +20,13 @@ import numpy as np
 # Initialize parser
 parser = argparse.ArgumentParser()
 # Adding arguments
-#parser.add_argument("--k", required=True)
+parser.add_argument("--k", required=True)
 parser.add_argument("--query", required=True)
 # ---------------------------------
 
 # -------------- Parameter Declaration -------------------
-img_folder_path = '/VOCtrainval_06-Nov-2007/VOCdevkit/VOC2007/JPEGImages/'
-img_class_path = '/VOCtrainval_06-Nov-2007/VOCdevkit/VOC2007/ImageSets/Main/processed_files/'
+img_folder_path = '\\VOCtrainval_06-Nov-2007\\VOCdevkit\\VOC2007\\JPEGImages\\'
+img_class_path = '\\VOCtrainval_06-Nov-2007\\VOCdevkit\\VOC2007\\ImageSets\\Main\\processed_files\\'
 img_class_set_names = [{'name': 'aeroplane', 'type': 'vehicle'},
                        {'name': 'bicycle', 'type': 'vehicle'},
                        {'name': 'bird', 'type': 'animal'},
@@ -54,6 +54,7 @@ n_patches = 250
 random_state = 1
 n_dic = 50  # size of the dictionary
 
+
 def gen_clus(c_name, cand_img, cons, f_name):
     '''Generate and Print Constrainted Cluster\n
        Parameters
@@ -74,16 +75,16 @@ def gen_clus(c_name, cand_img, cons, f_name):
     c_kmeans.fit(cons.x)
     labels = c_kmeans.predict(cons.x)
 
-    print(f'{c_name} Kmeans Clusters:')
-    for i in range(len(c_kmeans.clusters)):
-        print(f'Cluster {i + 1} :')
-        count = 0
-        for index in c_kmeans.clusters[i]:
-            count += 1
-            if count != len(c_kmeans.clusters[i]):
-                print(f'{cand_img[index].filename}, ', end='')
-            else:
-                print(f'{cand_img[index].filename}.')
+    # print(f'{c_name} Kmeans Clusters:')
+    # for i in range(len(c_kmeans.clusters)):
+    #     print(f'Cluster {i + 1} :')
+    #     count = 0
+    #     for index in c_kmeans.clusters[i]:
+    #         count += 1
+    #         if count != len(c_kmeans.clusters[i]):
+    #             print(f'{cand_img[index].filename}, ', end='')
+    #         else:
+    #             print(f'{cand_img[index].filename}.')
 
     return c_kmeans, labels
 
@@ -126,25 +127,29 @@ def gen_feats(f_name, query_img, img_dataset, n_imgs):
 def main():
     args = parser.parse_args()
     cand = []
-    Silhouette_Score_copk = []
-    Silhouette_Score_pck = []
+    one_Score_copk = []
+    one_Score_pck = []
+    two_Score_copk = []
+    two_Score_pck = []
+    three_Score_copk = []
+    three_Score_pck = []
     t0 = time()
     # Read arguments from command linecand.append(i)
     query = args.query
     path_query = os.getcwd() + img_folder_path + query + '.jpg'
     query_img = cv2.imread(path_query)
-    f_name = "MPEG7"
+    f_name = "SIFT"
 
     '''----------- Creating Data Set ------------------'''
     image_classSet = dataset.extract_imageDescrip(
-    img_class_set_names, img_class_path)
-    image_dataset, n_imgs = dataset.create_dataset(img_folder_path)    
+        img_class_set_names, img_class_path)
+    image_dataset, n_imgs = dataset.create_dataset(img_folder_path)
     print("Data Set Creation time: %0.3fs" % (time() - t0))
     '''Extract image features, candidates using knn & create constraints for given feature name'''
     features, query_feature = gen_feats(
         f_name, query_img, image_dataset, n_imgs)
 
-    for i in range(50,1001,50):
+    for i in range(100,551,50):
         cand.append(i)
         k = i
         '''----------- Candidate Selection ---------------'''
@@ -155,43 +160,55 @@ def main():
 
         '''----------- Constraint Creation ---------------'''
         t0 = time()
-        cand_img, cons = gen_cons.generate_constraints(
+        cand_img, cons, dist_matrix = gen_cons.generate_constraints(
             cand_img, cand_features, image_classSet, f_name)
         print("Constraint Creation time: %0.3fs" % (time() - t0))
 
+        t0 = time()
         '''Generate Clusters'''
         copk_clus, copk_labels = gen_clus("COP", cand_img, cons, f_name)
         pck_clus, pck_labels = gen_clus("PC", cand_img, cons, f_name)
-        
+
         '''Evaluate Clustering'''
-        copk_silhouette = clus_eval.silhouette_score(f_name, cons.x, copk_labels, len(cons.descripList))
-        pck_silhouette = clus_eval.silhouette_score(f_name, cons.x, pck_labels, len(cons.descripList))
-        
-        print(f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, copk_labels, len(cons.descripList))}')
-        print(f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, pck_labels, len(cons.descripList))}')
 
-        print(f'COPKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, copk_labels)}')
-        print(f'PCKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, pck_labels)}') 
+        one_Score_copk.append(clus_eval.silhouette_score(
+            f_name, cons.x, copk_labels, len(cons.descripList), dist_matrix))
+        one_Score_pck.append(clus_eval.silhouette_score(
+            f_name, cons.x, pck_labels, len(cons.descripList), dist_matrix))
 
-        print(f'COPKMeans Calinski Harabasz Score(n={k}): {clus_eval.my_calinski_harabasz_score(f_name, cons.x, copk_labels)}')
-        print(f'PCKMeans SCalinski Harabasz Score(n={k}): {clus_eval.my_calinski_harabasz_score(f_name, cons.x, pck_labels)}')
-        
-        Silhouette_Score_copk.append(copk_silhouette)
-        Silhouette_Score_pck.append(pck_silhouette)
-    
-    #fig, axs = plt.subplots(2)
-    #fig.suptitle('MPEG7 Calinski Harabasz Score for COPK and PCK means')
-    #axs[0].plot(cand, Calinski_Score_copk)
-    #axs[1].plot(cand, Calinski_Score_copk)
+        print(f'Clustering complete for cands {i}')
+        print("Cluster Creation & Evaluation time: %0.3fs" % (time() - t0))
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_xlabel("Candidates")
     ax.set_ylabel("Silhouette Score")
-    ax.plot(cand,Silhouette_Score_copk, label='COPK')
-    ax.plot(cand,Silhouette_Score_pck, label='PCK')
+    ax.plot(cand, one_Score_copk, label='COPK')
+    ax.plot(cand, one_Score_pck, label='PCK')
     ax.legend()
-    plt.title("MPEG7 Silhouette Score for COPK and PCK means")
+    plt.title("SIFT Silhouette Score for COPK and PCK means")
     plt.show()
+
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    # ax.set_xlabel("Candidates")
+    # ax.set_ylabel("V Measure")
+    # ax.plot(cand, two_Score_copk, label='COPK')
+    # ax.plot(cand, two_Score_pck, label='PCK')
+    # ax.legend()
+    # plt.title("SIFT V Measure for COPK and PCK means")
+    # plt.show()
+
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    # ax.set_xlabel("Candidates")
+    # ax.set_ylabel("Calinski Harabasz Score")
+    # ax.plot(cand, three_Score_copk, label='COPK')
+    # ax.plot(cand, three_Score_pck, label='PCK')
+    # ax.legend()
+    # plt.title("SIFT Calinski Harabasz Score for COPK and PCK means")
+    # plt.show()
+
 
 if __name__ == "__main__":
     main()

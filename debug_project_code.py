@@ -166,7 +166,7 @@ t0 = time()
 #     cand_img_mpeg7, cand_features_mpeg7, image_classSet, "MPEG7")
 # cand_img_bovw, cons_bovw = gen_cons.generate_constraints(
 #     cand_img_bovw, cand_features_bovw, image_classSet, "BOVW")
-cand_img_sift, cons_sift = gen_cons.generate_constraints(
+cand_img_sift, cons_sift, dist_matrix = gen_cons.generate_constraints(
     cand_img_sift, cand_features_sift, image_classSet, "SIFT")
 print("Constraint Creation time: %0.3fs" % (time() - t0))
 
@@ -180,9 +180,9 @@ mpeg7_pck_clus, mpeg7_pck_labels = gen_clus(
 
 '''Evaluate Clustering'''
 print(
-    f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("MPEG7", cons_mpeg7.x, mpeg7_copk_labels, len(cons_mpeg7.descripList))}')
+    f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("MPEG7", cons_mpeg7.x, mpeg7_copk_labels, len(cons_mpeg7.descripList), dist_matrix)}')
 print(
-    f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("MPEG7", cons_mpeg7.x, mpeg7_pck_labels, len(cons_mpeg7.descripList))}')
+    f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("MPEG7", cons_mpeg7.x, mpeg7_pck_labels, len(cons_mpeg7.descripList), dist_matrix)}')
 
 
 # %%
@@ -194,9 +194,9 @@ bovw_copk_clus, bovw_pck_labels = gen_clus(
 
 '''Evaluate Clustering'''
 print(
-    f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("BOVW", cons_bovw.x, bovw_copk_labels, len(cons_bovw.descripList))}')
+    f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("BOVW", cons_bovw.x, bovw_copk_labels, len(cons_bovw.descripList), dist_matrix)}')
 print(
-    f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("BOVW", cons_bovw.x, bovw_pck_labels, len(cons_bovw.descripList))}')
+    f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score("BOVW", cons_bovw.x, bovw_pck_labels, len(cons_bovw.descripList), dist_matrix)}')
 
 
 # %%

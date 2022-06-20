@@ -151,7 +151,7 @@ def main():
 
         '''----------- Constraint Creation ---------------'''
         t0 = time()
-        cand_img, cons = gen_cons.generate_constraints(
+        cand_img, cons, dist_matrix = gen_cons.generate_constraints(
             cand_img, cand_features, image_classSet, f_name)
         print("Constraint Creation time: %0.3fs" % (time() - t0))
 
@@ -161,8 +161,10 @@ def main():
 
         '''Evaluate Clustering'''
 
-        print(f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, copk_labels, len(cons.descripList))}')
-        print(f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, pck_labels, len(cons.descripList))}')
+        print(
+            f'COPKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, copk_labels, len(cons.descripList), dist_matrix)}')
+        print(
+            f'PCKMeans Silhouette Score(n={k}): {clus_eval.silhouette_score(f_name, cons.x, pck_labels, len(cons.descripList), dist_matrix)}')
 
         print(f'COPKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, copk_labels)}')
         print(f'PCKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, pck_labels)}')
