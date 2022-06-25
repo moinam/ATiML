@@ -79,22 +79,35 @@ def process_img_descrip(imgList, descripList):
 def gen_new_cons(imgList, f_name, feature_set, n_imgs, descripList):
     neighborhoods = []
     dist_matrix = []
+    f_dist_matrix = []
     isTraversed = []
     k = len(descripList)
+    i = 0
     # neighborhoods.append([x])
     # isTraversed.append(x)
     for img in imgList:
+        dists = []
+        f_dists = []
         if f_name == "SIFT":
+            for _ in range(i+1):
+                dists.append(0.0)
             bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
-            dists = []
-            for feat in feature_set:
-                matches = bf.match(feat, img.feature)
+            for j in range(i+1, len(feature_set)):
+                matches = bf.match(feature_set[j], img.feature)
                 matches = len(sorted(matches, key=lambda x: x.distance))
                 dist = 1 - (matches / len(feature_set[0]))
                 dists.append(dist)
+                f_dists.append(dist)
         else:
             dists = cand_selec.dist(f_name, feature_set, img.feature, n_imgs)
+            f_dists = cand_selec.dist(f_name, feature_set, img.feature, n_imgs)
         dist_matrix.append(dists)
+        f_dist_matrix.append(f_dists)
+        i+=1
+    if f_name == "SIFT":
+        for j in range(1, len(dist_matrix)):
+            for d in range(j):
+                dist_matrix[j][d] = dist_matrix[d][j]
     index_arr = range(n_imgs)
     while len(neighborhoods) < k:
         k_cbir = []
@@ -122,7 +135,7 @@ def gen_new_cons(imgList, f_name, feature_set, n_imgs, descripList):
                 dist[i] = 9999
         neighborhoods.append(neighb)
 
-    return neighborhoods
+    return neighborhoods, f_dist_matrix
 
 
 def generate_constraints(imgList, x, image_classSet, f_name):
@@ -135,7 +148,7 @@ def generate_constraints(imgList, x, image_classSet, f_name):
     must_link = []
     cannot_link = []
     descripList = generate_img_descrip(imgList, image_classSet)
-    neighborhoods = gen_new_cons(
+    neighborhoods, dist_matrix = gen_new_cons(
         imgList, f_name, x, len(imgList), descripList)
     candidate_descripSet, old_neighborhoods, y_labels = process_img_descrip(
         imgList, descripList)
@@ -170,7 +183,7 @@ def generate_constraints(imgList, x, image_classSet, f_name):
         must_link, cannot_link, len(imgList))
 
     return imgList, Constraints(must_link, cannot_link,
-                                ml_graph, cl_graph, neighborhoods, descripList, x, y_labels)
+                                ml_graph, cl_graph, neighborhoods, descripList, x, y_labels),  dist_matrix
 
 
 def transitive_entailment_graph(ml, cl, dslen):
