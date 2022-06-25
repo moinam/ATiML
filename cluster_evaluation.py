@@ -86,7 +86,10 @@ def silhouette_score(f_name, data_points, labels, k):
             if i == labels[j]:
                 temp += silh_points[j]
 
-        temp /= labels.count(i)
+        if labels.count(i) == 0:
+            temp = 0
+        else:
+            temp /= labels.count(i)
         final_score += temp
 
     return final_score / k
