@@ -16,7 +16,7 @@ import COP_Kmeans as COPK
 import cluster_evaluation as clus_eval
 import numpy as np
 
-# --------Acepting Input----------
+# --------Accepting Input----------
 # Initialize parser
 parser = argparse.ArgumentParser()
 # Adding arguments

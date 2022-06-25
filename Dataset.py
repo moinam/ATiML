@@ -5,6 +5,7 @@ import glob
 import cv2
 import csv
 
+
 # ------------ Data Initialization --------------
 # Dataset class for easy access
 
@@ -20,6 +21,7 @@ class Dataset:
     def __repr__(self):
         return "Image: % s, Description List: % s, Feature: %s" % (self.filename, self.descripList, self.feature)
 
+
 # Image Description class for easy access
 
 
@@ -30,6 +32,7 @@ class ImageDescrip:
 
     def __repr__(self):
         return "Image Description: % s, ImageList: % s" % (self.descrip, self.imgList)
+
 
 # Create Grayscale
 
@@ -58,6 +61,7 @@ def convert_greyscale(img):
 
     return img
 
+
 # Create DataSet Object
 
 
@@ -68,6 +72,16 @@ def create_dataset_object(img_file):
     '''
     img = cv2.imread(img_file)
     return Dataset(img, img_file[-10:-4], img_file, [], None)
+
+
+def create_random_dataset_object(img_file):
+    '''Creates object of Class: DataSet and uses random values for the image\n
+       Parameters
+           file: path for an image
+    '''
+    img = np.random.randint(low=0, high=255, size=(375, 500, 3), dtype=np.uint8)
+    return Dataset(img, img_file, img_file, [], None)
+
 
 # Create Image Data Set
 
@@ -84,6 +98,17 @@ def create_dataset(img_folder_path):
 
     return image_dataset, len(image_dataset)
 
+
+def create_random_dataset():
+    '''Create random images and create DataSet class array: image_dataset
+    '''
+    # Reading images from location to a class array
+    image_dataset = Parallel(n_jobs=-1)(delayed(create_dataset_object)(i)
+                                        for i in range(5011))
+
+    return image_dataset, len(image_dataset)
+
+
 # Extract ImageList
 
 
@@ -98,13 +123,13 @@ def extract_imageDescrip(img_class_set_names, img_class_path):
     for descrip in img_class_set_names:
         entry = []
         path_text = os.getcwd() + img_class_path + \
-            descrip["name"] + '_trainval.csv'
+                    descrip["name"] + '_trainval.csv'
         with open(path_text, 'r') as file:
             my_reader = csv.reader(file, delimiter=',')
             for row in my_reader:
-                if(row[1] == '-1'):
+                if (row[1] == '-1'):
                     continue
-                if(row[0] == 'ï»¿000005'):
+                if (row[0] == 'ï»¿000005'):
                     row[0] = '000005'
                 entry.append(row[0])
 

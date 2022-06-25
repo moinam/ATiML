@@ -149,13 +149,13 @@ def main():
     features, query_feature = gen_feats(
         f_name, query_img, image_dataset, n_imgs)
 
-    for i in range(100,551,50):
+    for i in range(100, 551, 50):
         cand.append(i)
         k = i
         '''----------- Candidate Selection ---------------'''
         t0 = time()
         cand_img, cand_features = cand_selec.select_candidates(
-        f_name, k, features, query_feature, image_dataset, n_imgs)
+            f_name, k, features, query_feature, image_dataset, n_imgs)
         print("Candidate Selection time: %0.3fs" % (time() - t0))
 
         '''----------- Constraint Creation ---------------'''
