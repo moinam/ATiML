@@ -1,4 +1,6 @@
 import os
+import random
+
 from joblib import Parallel, delayed
 import numpy as np
 import glob
@@ -103,7 +105,7 @@ def create_random_dataset():
     '''Create random images and create DataSet class array: image_dataset
     '''
     # Reading images from location to a class array
-    image_dataset = Parallel(n_jobs=-1)(delayed(create_dataset_object)(i)
+    image_dataset = Parallel(n_jobs=-1)(delayed(create_random_dataset_object)(str(i))
                                         for i in range(5011))
 
     return image_dataset, len(image_dataset)
@@ -144,5 +146,23 @@ def extract_imageDescrip(img_class_set_names, img_class_path):
     #         if classType == imgdescrip.descrip:
     #             entry.update(imgdescrip.imgList)
     #     image_classSet.append(ImageDescrip(classType, set((entry))))
+
+    return image_classSet
+
+
+def extract_random_image_descrip(img_class_set_names):
+    '''Assigning random images to random classes
+    '''
+    image_classSet = []
+    num_of_classes = len(img_class_set_names)
+    temp_img_classSet = [[] for i in range(num_of_classes)]
+
+    for i in range(5011):
+        temp_img_classSet[random.randint(0, num_of_classes - 1)].append(str(i))
+
+    temp = 0
+    for descrip in img_class_set_names:
+        image_classSet.append(ImageDescrip(descrip["name"], temp_img_classSet[temp]))
+        temp += 1
 
     return image_classSet

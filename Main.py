@@ -54,6 +54,7 @@ n_patches = 250
 random_state = 1
 n_dic = 50  # size of the dictionary
 
+
 def gen_clus(c_name, cand_img, cons, f_name):
     '''Generate and Print Constrainted Cluster\n
        Parameters
@@ -132,13 +133,14 @@ def main():
 
     '''----------- Creating Data Set ------------------'''
     t0 = time()
-    image_classSet = dataset.extract_imageDescrip(
-    img_class_set_names, img_class_path)
-    image_dataset, n_imgs = dataset.create_dataset(img_folder_path)
+    # image_classSet = dataset.extract_imageDescrip(img_class_set_names, img_class_path)
+    # image_dataset, n_imgs = dataset.create_dataset(img_folder_path)
+    image_classSet = dataset.extract_random_image_descrip(img_class_set_names)
+    image_dataset, n_imgs = dataset.create_random_dataset()
     print("Data Set Creation time: %0.3fs" % (time() - t0))
 
     '''Extract image features, candidates using knn & create constraints for given feature name'''
-    f_name_arr = ["MPEG7", "BOVW", "SIFT"]
+    f_name_arr = ["MPEG7"]
     for f_name in f_name_arr:
         features, query_feature = gen_feats(
             f_name, query_img, image_dataset, n_imgs)
@@ -169,8 +171,11 @@ def main():
         print(f'COPKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, copk_labels)}')
         print(f'PCKMeans V-Measure Score(n={k}): {clus_eval.my_v_measure_score(cons.y, pck_labels)}')
 
-        print(f'COPKMeans Calinski Harabasz Score(n={k}): {clus_eval.my_calinski_harabasz_score(f_name, cons.x, copk_labels)}')
-        print(f'PCKMeans SCalinski Harabasz Score(n={k}): {clus_eval.my_calinski_harabasz_score(f_name, cons.x, pck_labels)}')
+        print(
+            f'COPKMeans Calinski Harabasz Score(n={k}): {clus_eval.my_calinski_harabasz_score(f_name, cons.x, copk_labels)}')
+        print(
+            f'PCKMeans SCalinski Harabasz Score(n={k}): {clus_eval.my_calinski_harabasz_score(f_name, cons.x, pck_labels)}')
+
 
 if __name__ == "__main__":
     main()
