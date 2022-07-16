@@ -91,6 +91,7 @@ def gen_new_cons(imgList, f_name, feature_set, n_imgs, descripList):
         if f_name == "SIFT":
             for _ in range(i+1):
                 dists.append(0.0)
+                f_dists.append(0.0)
             bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
             for j in range(i+1, len(feature_set)):
                 matches = bf.match(feature_set[j], img.feature)
@@ -108,6 +109,8 @@ def gen_new_cons(imgList, f_name, feature_set, n_imgs, descripList):
         for j in range(1, len(dist_matrix)):
             for d in range(j):
                 dist_matrix[j][d] = dist_matrix[d][j]
+                f_dist_matrix[j][d] = f_dist_matrix[d][j]
+
     index_arr = range(n_imgs)
     while len(neighborhoods) < k:
         k_cbir = []
@@ -165,19 +168,6 @@ def generate_constraints(imgList, x, image_classSet, f_name):
                 for i in set1:
                     for j in set2:
                         cannot_link.append((i, j))
-
-    # for set in candidate_descripSet:
-    #     for i in set.imgList:
-    #         for j in set.imgList:
-    #             if i != j:
-    #                 must_link.append((i, j))
-
-    # for set1 in candidate_descripSet:
-    #     for set2 in candidate_descripSet:
-    #         if set1.imgList != set2.imgList:
-    #             for i in set1.imgList:
-    #                 for j in set2.imgList:
-    #                     cannot_link.append((i, j))
 
     ml_graph, cl_graph = transitive_entailment_graph(
         must_link, cannot_link, len(imgList))
